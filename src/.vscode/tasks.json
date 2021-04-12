@@ -1,0 +1,44 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "cppbuild",
+			"label": "C/C++: g++ build active file",
+			"command": "/usr/bin/g++",
+			"args": [
+				"-I/usr/include/mrpt/math/include/",
+                "-I/usr/include/mrpt/core/include/",
+                "-I/usr/include/mrpt/obs/include/",
+                "-I/usr/include/mrpt/typemeta/include/",
+                "-I/usr/include/mrpt/poses/include/",
+                "-I/usr/include/mrpt/system/include/",
+                "-I/usr/include/mrpt/serialization/include/",
+                "-I/usr/include/mrpt/config/include/",
+                "-I/usr/include/mrpt/rtti/include/",
+                "-I/usr/include/mrpt/opengl/include/",
+                "-I/usr/include/mrpt/img/include/",
+                "-I/usr/include/mrpt/containers/include/",
+                "-I/usr/include/mrpt/tfest/include/",
+				"-I/home/angel/eigen/eigen-3.3.9/",
+				"-lgtsam",
+				"-ltbb",
+				"-std=c++17",
+				"-g",
+				"${file}",
+				"-o",
+				"${fileDirname}/${fileBasenameNoExtension}"
+			],
+			"options": {
+				"cwd": "${workspaceFolder}"
+			},
+			"problemMatcher": [
+				"$gcc"
+			],
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"detail": "compiler: /usr/bin/g++"
+		}
+	]
+}

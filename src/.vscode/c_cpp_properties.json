@@ -1,0 +1,31 @@
+{
+    "configurations": [
+        {
+            "name": "Linux",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "/usr/lib/x86_64-linux-gnu/",
+                "/usr/include/mrpt/math/include/",
+                "/usr/include/mrpt/core/include/",
+                "/usr/include/mrpt/obs/include/",
+                "/usr/include/mrpt/typemeta/include/",
+                "/usr/include/mrpt/poses/include/",
+                "/usr/include/mrpt/system/include/",
+                "/usr/include/mrpt/serialization/include/",
+                "/usr/include/mrpt/config/include/",
+                "/usr/include/mrpt/rtti/include/",
+                "/usr/include/mrpt/opengl/include/",
+                "/usr/include/mrpt/img/include/",
+                "/usr/include/mrpt/containers/include/",
+                "/usr/include/mrpt/tfest/include/",
+                "/home/angel/eigen/eigen-3.3.9/"
+            ],
+            "defines": [],
+            "compilerPath": "/usr/bin/gcc",
+            "cStandard": "c11",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "linux-gcc-x64"
+        }
+    ],
+    "version": 4
+}
