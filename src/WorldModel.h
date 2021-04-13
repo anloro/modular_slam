@@ -9,9 +9,9 @@
 #include <gtsam/nonlinear/NonlinearFactorGraph.h>
 #include <gtsam/nonlinear/Values.h>
 
+#include <gtsam/nonlinear/GaussNewtonOptimizer.h>
 // #include <gtsam/geometry/Pose2.h>
 // #include <gtsam/inference/Key.h>
-// #include <gtsam/nonlinear/GaussNewtonOptimizer.h>
 // #include <gtsam/nonlinear/Marginals.h>
 
 #include <iostream>
@@ -20,16 +20,19 @@
 class WorldModel{
     public:
         WorldModel();
-        void AddEntity();
         // case 2D
-        void AddFactor(int from_node, int to_node, std::array<double, 3> mean, std::array<double, 3> noise);
+        void AddEntity(int nodeId, double pose[3]);
+        void AddFactor(int fromNode, int toNode, double mean[3], double noise[3]);
+        void Optimize();
 
-    private:
-    // save the info of the custom pose graph
-    std::vector<Entity> _entities;
+    // private :
+        // save the info of the custom pose graph
+        // std::vector<Entity> _entities;
         // Factor _factors;
 
         // save the info for gtsam
         gtsam::NonlinearFactorGraph _graph;
-        gtsam::Values _initial_estimate;
+        gtsam::Values _initialEstimate;
+        gtsam::GaussNewtonOptimizer _optimizer;
+        gtsam::Values _result;
 };
