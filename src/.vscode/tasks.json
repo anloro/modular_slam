@@ -22,6 +22,7 @@
 				"-I/home/angel/eigen/eigen-3.3.9/",
 				"-lgtsam",
 				"-ltbb",
+				"-lopencv_core",
 				"-std=c++17",
 				"-g",
 				"${file}",
