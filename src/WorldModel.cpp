@@ -18,19 +18,16 @@
 #include <iostream>
 #include <chrono>
 
-WorldModel::WorldModel() : _optimizer(_graph, _initialEstimate){
-    // do we create the graph here?
-    int initId = 1;
-    double initPose [3] = {0, 0, 0};
-    double initNoise [3] = {0.3, 0.3, 0.1};
-    // Add a prior on the first pose, setting it to the origin
-    auto priorNoise = gtsam::noiseModel::Diagonal::Sigmas(gtsam::Vector3(initNoise[0], initNoise[1], initNoise[2]));
-    _graph.addPrior(initId, gtsam::Pose2(initPose[0], initPose[1], initPose[2]), priorNoise);
-    // Create the optimizer
-    // gtsam::GaussNewtonParams parameters;
-    // _optimizer = gtsam::GaussNewtonOptimizer(_graph, _initialEstimate, parameters);
-
-    // _optimizer = &optimizer;
+// WorldModel::WorldModel() : _optimizer(_graph, _initialEstimate){
+WorldModel::WorldModel()
+{
+        // do we create the graph here?
+        int initId = 1;
+        double initPose[3] = {0, 0, 0};
+        double initNoise[3] = {0.3, 0.3, 0.1};
+        // Add a prior on the first pose, setting it to the origin
+        auto priorNoise = gtsam::noiseModel::Diagonal::Sigmas(gtsam::Vector3(initNoise[0], initNoise[1], initNoise[2]));
+        _graph.addPrior(initId, gtsam::Pose2(initPose[0], initPose[1], initPose[2]), priorNoise);
 }
 
 void WorldModel::AddEntity(int nodeId, double pose[3])
@@ -49,7 +46,25 @@ void WorldModel::AddFactor(int fromNode, int toNode, double mean[3], double nois
 }
 
 void WorldModel::Optimize(){
-    _optimizer.optimize();
+    gtsam::GaussNewtonParams parameters;
+    gtsam::GaussNewtonOptimizer optimizer(_graph, _initialEstimate, parameters);
+    gtsam::Values _result = optimizer.optimize();
+
+    // This is for testing
+    _result.print("Final Result:\n");
+    // 5. Calculate and print marginal covariances for all variables
+    std::cout.precision(3);
+    gtsam::Marginals marginals(_graph, _result);
+    std::cout << "x1 covariance:\n"
+              << marginals.marginalCovariance(1) << std::endl;
+    std::cout << "x2 covariance:\n"
+              << marginals.marginalCovariance(2) << std::endl;
+    std::cout << "x3 covariance:\n"
+              << marginals.marginalCovariance(3) << std::endl;
+    std::cout << "x4 covariance:\n"
+              << marginals.marginalCovariance(4) << std::endl;
+    std::cout << "x5 covariance:\n"
+              << marginals.marginalCovariance(5) << std::endl;
 }
 
 int main()
@@ -101,25 +116,7 @@ int main()
     a[2] = -M_PI_2;
     myWorld.AddEntity(5, a);
 
-    gtsam::GaussNewtonParams parameters;
-    gtsam::GaussNewtonOptimizer optimizer(myWorld._graph, myWorld._initialEstimate, parameters);
-    gtsam::Values result = optimizer.optimize();
-
-    result.print("Final Result:\n");
-
-    // 5. Calculate and print marginal covariances for all variables
-    std::cout.precision(3);
-    gtsam::Marginals marginals(myWorld._graph, result);
-    std::cout << "x1 covariance:\n"
-              << marginals.marginalCovariance(1) << std::endl;
-    std::cout << "x2 covariance:\n"
-              << marginals.marginalCovariance(2) << std::endl;
-    std::cout << "x3 covariance:\n"
-              << marginals.marginalCovariance(3) << std::endl;
-    std::cout << "x4 covariance:\n"
-              << marginals.marginalCovariance(4) << std::endl;
-    std::cout << "x5 covariance:\n"
-              << marginals.marginalCovariance(5) << std::endl;
+    myWorld.Optimize();
 
     return 0;
 }

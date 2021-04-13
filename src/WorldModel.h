@@ -33,6 +33,5 @@ class WorldModel{
         // save the info for gtsam
         gtsam::NonlinearFactorGraph _graph;
         gtsam::Values _initialEstimate;
-        gtsam::GaussNewtonOptimizer _optimizer;
         gtsam::Values _result;
 };
