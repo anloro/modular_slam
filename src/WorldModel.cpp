@@ -5,6 +5,7 @@
 // includes to create the custom graph
 #include <opencv2/core/core.hpp>
 #include <gtsam/geometry/Pose3.h>
+#include <gtsam/geometry/Rot3.h>
 #include <gtsam/slam/BetweenFactor.h>
 // includes to the gtsam graph
 #include <gtsam/nonlinear/NonlinearFactorGraph.h>
@@ -18,43 +19,69 @@
 #include <iostream>
 #include <chrono>
 
-// WorldModel::WorldModel() : _optimizer(_graph, _initialEstimate){
+using namespace gtsam;
+
 WorldModel::WorldModel()
 {
-        // do we create the graph here?
-        int initId = 1;
-        double initPose[3] = {0, 0, 0};
-        double initNoise[3] = {0.3, 0.3, 0.1};
-        // Add a prior on the first pose, setting it to the origin
-        auto priorNoise = gtsam::noiseModel::Diagonal::Sigmas(gtsam::Vector3(initNoise[0], initNoise[1], initNoise[2]));
-        _graph.addPrior(initId, gtsam::Pose2(initPose[0], initPose[1], initPose[2]), priorNoise);
+    // do we create the graph here?
+    int initId = 1;
+    double initPose[3] = {0, 0, 0};
+    double initNoise[3] = {0.3, 0.3, 0.1};
+    // Add a prior on the first pose, setting it to the origin
+    auto priorNoise = noiseModel::Diagonal::Sigmas(Vector3(initNoise[0], initNoise[1], initNoise[2]));
+    _graph.addPrior(initId, Pose2(initPose[0], initPose[1], initPose[2]), priorNoise);
 }
 
-void WorldModel::AddEntity(int nodeId, double pose[3])
+// ---------------------------------------------------------
+// ------------------- 2D CASE -----------------------------
+// ---------------------------------------------------------
+
+void WorldModel::AddEntity(int nodeId, double pose[])
 {
     // add new initial estimate of a node
-    gtsam::Pose2 newPose = gtsam::Pose2(pose[0], pose[1], pose[2]);
+    Pose2 newPose = Pose2(pose[0], pose[1], pose[2]);
     _initialEstimate.insert(nodeId, newPose);
 }
 
-void WorldModel::AddFactor(int fromNode, int toNode, double mean[3], double noise[3])
+void WorldModel::AddFactor(int fromNode, int toNode, double mean[], double noise_sigmas[])
 {
     // add new factor to gtsam posegraph in the 2D case
-    auto noise_model = gtsam::noiseModel::Diagonal::Sigmas(gtsam::Vector3(noise[0], noise[1], noise[2]));
-    gtsam::Pose2 newMean = gtsam::Pose2(mean[0], mean[1], mean[2]);
-    _graph.emplace_shared<gtsam::BetweenFactor<gtsam::Pose2>>(fromNode, toNode, newMean, noise_model);
+    auto noise_model = noiseModel::Diagonal::Sigmas(Vector3(noise_sigmas[0], noise_sigmas[1], noise_sigmas[2]));
+    Pose2 newMean = Pose2(mean[0], mean[1], mean[2]);
+    _graph.emplace_shared<BetweenFactor<Pose2>>(fromNode, toNode, newMean, noise_model);
 }
 
+// ---------------------------------------------------------
+// ------------------- 3D CASE -----------------------------
+// ---------------------------------------------------------
+
+// void WorldModel::AddEntity(int nodeId, double pose[6])
+// {
+//     // add new initial estimate of a node
+//     Rot3 newR = Rot3::RzRyRx(pose[0], pose[1], pose[2]);
+//     Point3 newP = Point3(pose[3], pose[4], pose[5]);
+//     Pose3 newPose = Pose3(newR, newP);
+//     _initialEstimate.insert(nodeId, newPose);
+// }
+
+// void WorldModel::AddFactor(int fromNode, int toNode, double mean[6], double noise_sigmas[6])
+// {
+//     // add new factor to gtsam posegraph in the 2D case
+//     auto noise_model = noiseModel::Diagonal::Sigmas(Vector3(noise_sigmas[0], noise_sigmas[1], noise_sigmas[2]));
+//     Pose2 newMean = Pose2(mean[0], mean[1], mean[2]);
+//     _graph.emplace_shared<BetweenFactor<Pose2>>(fromNode, toNode, newMean, noise_model);
+// }
+
 void WorldModel::Optimize(){
-    gtsam::GaussNewtonParams parameters;
-    gtsam::GaussNewtonOptimizer optimizer(_graph, _initialEstimate, parameters);
-    gtsam::Values _result = optimizer.optimize();
+    GaussNewtonParams parameters;
+    GaussNewtonOptimizer optimizer(_graph, _initialEstimate, parameters);
+    Values _result = optimizer.optimize();
 
     // This is for testing
     _result.print("Final Result:\n");
     // 5. Calculate and print marginal covariances for all variables
     std::cout.precision(3);
-    gtsam::Marginals marginals(_graph, _result);
+    Marginals marginals(_graph, _result);
     std::cout << "x1 covariance:\n"
               << marginals.marginalCovariance(1) << std::endl;
     std::cout << "x2 covariance:\n"
@@ -71,18 +98,18 @@ int main()
 {
 
     // Testing entity creation with SE3 pose.
-    gtsam::Point3 t;
-    t = gtsam::Point3(0.0, 0.0, 0.0);
+    Point3 t;
+    t = Point3(0.0, 0.0, 0.0);
     std::cout<< t << std::endl;
     
-    gtsam::Rot3 r;
-    r = gtsam::Rot3(0.0, 0.0, 0.0,
+    Rot3 r;
+    r = Rot3(0.0, 0.0, 0.0,
                     0.0, 0.0, 0.0,
                     0.0, 0.0, 0.0);
     std::cout << r << std::endl;
 
-    gtsam::Pose3 new_pose;
-    new_pose = gtsam::Pose3(r, t);
+    Pose3 new_pose;
+    new_pose = Pose3(r, t);
     std::cout << new_pose << std::endl;
 
     // Test the WorldModel constructors
