@@ -21,11 +21,11 @@ class WorldModel{
     public:
         WorldModel();
         // 2D case
-        void AddEntity(int nodeId, double pose[]);
-        void AddFactor(int fromNode, int toNode, double mean[], double noise[]);
+        void AddEntity(int nodeId, double x, double y, double theta);
+        void AddFactor(int fromNode, int toNode, double x, double y, double theta, double sigmaX, double sigmaY, double sigmaTheta);
         // 3D case
-        // void AddEntity(int nodeId, double pose[6]);
-        // void AddFactor(int fromNode, int toNode, double mean[6], double noise[6]);
+        void AddEntity(int nodeId, double x, double y, double z, double roll, double pitch, double yaw);
+        void AddFactor(int fromNode, int toNode, double x, double y, double z, double roll, double pitch, double yaw, double sigmaX, double sigmaY, double sigmaZ, double sigmaRoll, double sigmaPitch, double sigmaYaw);
         // Optimization
         void Optimize();
 

@@ -25,52 +25,59 @@ WorldModel::WorldModel()
 {
     // do we create the graph here?
     int initId = 1;
-    double initPose[3] = {0, 0, 0};
-    double initNoise[3] = {0.3, 0.3, 0.1};
+    // 2D CASE
     // Add a prior on the first pose, setting it to the origin
-    auto priorNoise = noiseModel::Diagonal::Sigmas(Vector3(initNoise[0], initNoise[1], initNoise[2]));
-    _graph.addPrior(initId, Pose2(initPose[0], initPose[1], initPose[2]), priorNoise);
+    // auto priorNoise = noiseModel::Diagonal::Sigmas(Vector3(0.3, 0.3, 0.1));
+    // _graph.addPrior(initId, Pose2(0, 0, 0), priorNoise);
+
+    // 3D CASE
+    // Add a prior on the first pose, setting it to the origin
+    auto priorNoise = noiseModel::Diagonal::Sigmas((Vector(6) << 0.3, 0.3, 0.0, 0.0, 0.0, 0.1).finished());
+    Rot3 priorR = Rot3::RzRyRx(0, 0, 0);
+    Point3 priorP = Point3(0, 0, 0);
+    Pose3 priorPose = Pose3(priorR, priorP);
+    _graph.addPrior(initId, priorPose, priorNoise);
 }
 
 // ---------------------------------------------------------
 // ------------------- 2D CASE -----------------------------
 // ---------------------------------------------------------
-
-void WorldModel::AddEntity(int nodeId, double pose[])
+void WorldModel::AddEntity(int nodeId, double x, double y, double theta)
 {
     // add new initial estimate of a node
-    Pose2 newPose = Pose2(pose[0], pose[1], pose[2]);
+    Pose2 newPose = Pose2(x, y, theta);
     _initialEstimate.insert(nodeId, newPose);
 }
 
-void WorldModel::AddFactor(int fromNode, int toNode, double mean[], double noise_sigmas[])
+void WorldModel::AddFactor(int fromNode, int toNode, double x, double y, double theta, double sigmaX, double sigmaY, double sigmaTheta)
 {
     // add new factor to gtsam posegraph in the 2D case
-    auto noise_model = noiseModel::Diagonal::Sigmas(Vector3(noise_sigmas[0], noise_sigmas[1], noise_sigmas[2]));
-    Pose2 newMean = Pose2(mean[0], mean[1], mean[2]);
-    _graph.emplace_shared<BetweenFactor<Pose2>>(fromNode, toNode, newMean, noise_model);
+    auto noiseModel = noiseModel::Diagonal::Sigmas(Vector3(sigmaX, sigmaY, sigmaTheta));
+    Pose2 newMean = Pose2(x, y, theta);
+    _graph.emplace_shared<BetweenFactor<Pose2>>(fromNode, toNode, newMean, noiseModel);
 }
 
 // ---------------------------------------------------------
 // ------------------- 3D CASE -----------------------------
 // ---------------------------------------------------------
+void WorldModel::AddEntity(int nodeId, double x, double y, double z, double roll, double pitch, double yaw)
+{
+    // add new initial estimate of a node
+    Rot3 newR = Rot3::RzRyRx(yaw, pitch, roll);
+    Point3 newP = Point3(x, y, z);
+    Pose3 newPose = Pose3(newR, newP);
+    _initialEstimate.insert(nodeId, newPose);
+}
 
-// void WorldModel::AddEntity(int nodeId, double pose[6])
-// {
-//     // add new initial estimate of a node
-//     Rot3 newR = Rot3::RzRyRx(pose[0], pose[1], pose[2]);
-//     Point3 newP = Point3(pose[3], pose[4], pose[5]);
-//     Pose3 newPose = Pose3(newR, newP);
-//     _initialEstimate.insert(nodeId, newPose);
-// }
-
-// void WorldModel::AddFactor(int fromNode, int toNode, double mean[6], double noise_sigmas[6])
-// {
-//     // add new factor to gtsam posegraph in the 2D case
-//     auto noise_model = noiseModel::Diagonal::Sigmas(Vector3(noise_sigmas[0], noise_sigmas[1], noise_sigmas[2]));
-//     Pose2 newMean = Pose2(mean[0], mean[1], mean[2]);
-//     _graph.emplace_shared<BetweenFactor<Pose2>>(fromNode, toNode, newMean, noise_model);
-// }
+void WorldModel::AddFactor(int fromNode, int toNode, double x, double y, double z, double roll, double pitch, double yaw, double sigmaX, double sigmaY, double sigmaZ, double sigmaRoll, double sigmaPitch, double sigmaYaw)
+{
+    // add new factor to gtsam posegraph in the 2D case
+    auto noiseModel = noiseModel::Diagonal::Sigmas((Vector(6)<<sigmaX, sigmaY, sigmaZ, sigmaRoll, sigmaPitch, sigmaYaw).finished());
+    Rot3 newR = Rot3::RzRyRx(yaw, pitch, roll);
+    Point3 newP = Point3(x, y, z);
+    Pose3 newMean = Pose3(newR, newP);
+    _graph.emplace_shared<BetweenFactor<Pose3>>(fromNode, toNode, newMean, noiseModel);
+}
 
 void WorldModel::Optimize(){
     GaussNewtonParams parameters;
@@ -98,51 +105,65 @@ int main()
 {
 
     // Testing entity creation with SE3 pose.
-    Point3 t;
-    t = Point3(0.0, 0.0, 0.0);
-    std::cout<< t << std::endl;
+    // Point3 t;
+    // t = Point3(0.0, 0.0, 0.0);
+    // std::cout<< t << std::endl;
     
-    Rot3 r;
-    r = Rot3(0.0, 0.0, 0.0,
-                    0.0, 0.0, 0.0,
-                    0.0, 0.0, 0.0);
-    std::cout << r << std::endl;
+    // Rot3 r;
+    // r = Rot3(0.0, 0.0, 0.0,
+    //          0.0, 0.0, 0.0,
+    //          0.0, 0.0, 0.0);
+    // std::cout << r << std::endl;
 
-    Pose3 new_pose;
-    new_pose = Pose3(r, t);
-    std::cout << new_pose << std::endl;
+    // Pose3 new_pose;
+    // new_pose = Pose3(r, t);
+    // std::cout << new_pose << std::endl;
 
-    // Test the WorldModel constructors
+    // // Test the WorldModel constructors for 2D
+    // WorldModel myWorld = WorldModel();
+    // myWorld.AddFactor(1, 2, 2, 0, 0, 0.2, 0.2, 0.1);
+    // myWorld.AddFactor(2, 3, 2, 0, M_PI_2, 0.2, 0.2, 0.1);
+    // myWorld.AddFactor(3, 4, 2, 0, M_PI_2, 0.2, 0.2, 0.1);
+    // myWorld.AddFactor(4, 5, 2, 0, M_PI_2, 0.2, 0.2, 0.1);
+    // myWorld.AddFactor(5, 2, 2, 0, M_PI_2, 0.2, 0.2, 0.1);
+    // // add the initial estimates
+    // myWorld.AddEntity(1, 0.5, 0.0, 0.2);
+    // myWorld.AddEntity(2, 2.3, 0.1, -0.2);
+    // myWorld.AddEntity(3, 4.1, 0.1, M_PI_2);
+    // myWorld.AddEntity(4, 4.0, 2.0, M_PI);
+    // myWorld.AddEntity(5, 2.1, 2.1, -M_PI_2);
+
+    // // Test the WorldModel constructors for 3D
+    // WorldModel myWorld = WorldModel();
+    // myWorld.AddFactor(1, 2, 2, 0, 0, 0, 0,      0, 0.2, 0.2, 0, 0, 0, 0.1);
+    // myWorld.AddFactor(2, 3, 2, 0, 0, 0, 0, M_PI_2, 0.2, 0.2, 0, 0, 0, 0.1);
+    // myWorld.AddFactor(3, 4, 2, 0, 0, 0, 0, M_PI_2, 0.2, 0.2, 0, 0, 0, 0.1);
+    // myWorld.AddFactor(4, 5, 2, 0, 0, 0, 0, M_PI_2, 0.2, 0.2, 0, 0, 0, 0.1);
+    // myWorld.AddFactor(5, 2, 2, 0, 0, 0, 0, M_PI_2, 0.2, 0.2, 0, 0, 0, 0.1);
+    // // add the initial estimates
+    // myWorld.AddEntity(1, 0.5, 0.0, 0, 0, 0, 0.2);
+    // myWorld.AddEntity(2, 2.3, 0.1, 0, 0, 0, -0.2);
+    // myWorld.AddEntity(3, 4.1, 0.1, 0, 0, 0, M_PI_2);
+    // myWorld.AddEntity(4, 4.0, 2.0, 0, 0, 0, M_PI);
+    // myWorld.AddEntity(5, 2.1, 2.1, 0, 0, 0, -M_PI_2);
+
+    // Test the WorldModel constructors for 2D and 3D case
     WorldModel myWorld = WorldModel();
-    double p[3] = {2, 0, 0};
-    double n[3] = {0.2, 0.2, 0.1};
-    myWorld.AddFactor(1, 2, p, n);
-    p[2] = M_PI_2;
-    myWorld.AddFactor(2, 3, p, n);
-    myWorld.AddFactor(3, 4, p, n);
-    myWorld.AddFactor(4, 5, p, n);
-    myWorld.AddFactor(5, 2, p, n);
+    myWorld.AddFactor(1, 2, 2, 0, 0, 0, 0, 0, 0.2, 0.2, 0, 0, 0, 0.1);
+    myWorld.AddFactor(2, 3, 2, 0, 0, 0, 0, M_PI_2, 0.2, 0.2, 0, 0, 0, 0.1);
+    myWorld.AddFactor(3, 4, 2, 0, 0, 0, 0, M_PI_2, 0.2, 0.2, 0, 0, 0, 0.1);
+    myWorld.AddFactor(4, 5, 2, 0, 0, 0, 0, M_PI_2, 0.2, 0.2, 0, 0, 0, 0.1);
+    myWorld.AddFactor(5, 2, 2, 0, 0, 0, 0, M_PI_2, 0.2, 0.2, 0, 0, 0, 0.1);
+    myWorld.AddFactor(5, 1, 2, 0, M_PI_2, 0.2, 0.2, 0.1);
 
     // add the initial estimates
-    double a[3] = {0.5, 0.0, 0.2};
-    myWorld.AddEntity(1, a);
-    a[0] = 2.3; 
-    a[1] = 0.1; 
-    a[2] = -0.2;
-    myWorld.AddEntity(2, a);
-    a[0] = 4.1;
-    a[1] = 0.1;
-    a[2] = M_PI_2;
-    myWorld.AddEntity(3,a);
-    a[0] = 4.0;
-    a[1] = 2.0;
-    a[2] = M_PI;
-    myWorld.AddEntity(4, a);
-    a[0] = 2.1;
-    a[1] = 2.1;
-    a[2] = -M_PI_2;
-    myWorld.AddEntity(5, a);
+    myWorld.AddEntity(1, 0.5, 0.0, 0, 0, 0, 0.2);
+    myWorld.AddEntity(2, 2.3, 0.1, 0, 0, 0, -0.2);
+    myWorld.AddEntity(3, 4.1, 0.1, 0, 0, 0, M_PI_2);
+    myWorld.AddEntity(4, 4.0, 2.0, 0, 0, 0, M_PI);
+    myWorld.AddEntity(5, 2.1, 2.1, 0, 0, 0, -M_PI_2);
 
+    // optimize
     myWorld.Optimize();
 
     return 0;
