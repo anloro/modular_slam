@@ -107,22 +107,6 @@ void WorldModel::Optimize(){
 
 int main()
 {
-
-    // Testing entity creation with SE3 pose.
-    // Point3 t;
-    // t = Point3(0.0, 0.0, 0.0);
-    // std::cout<< t << std::endl;
-    
-    // Rot3 r;
-    // r = Rot3(0.0, 0.0, 0.0,
-    //          0.0, 0.0, 0.0,
-    //          0.0, 0.0, 0.0);
-    // std::cout << r << std::endl;
-
-    // Pose3 new_pose;
-    // new_pose = Pose3(r, t);
-    // std::cout << new_pose << std::endl;
-
     WorldModel myWorld = WorldModel();
 
     // // Test the WorldModel constructors for 2D
