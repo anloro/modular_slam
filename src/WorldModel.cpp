@@ -52,15 +52,6 @@ void WorldModel::AddEntity(int nodeId, double x, double y, double theta)
     _initialEstimate.insert(nodeId, newPose);
 }
 
-void WorldModel::AddFactor(int fromNode, int toNode, double x, double y, double theta, double sigmaX, double sigmaY, double sigmaTheta)
-{
-    // add new factor to gtsam posegraph in the 2D case
-    auto noiseModel = noiseModel::Diagonal::Sigmas((Vector(6) << sigmaX, sigmaY, 0, 0, 0, sigmaTheta).finished());
-    Pose2 newMean2 = Pose2(x, y, theta);
-    Pose3 newMean = Pose3(newMean2);
-    _graph.emplace_shared<BetweenFactor<Pose3>>(fromNode, toNode, newMean, noiseModel);
-}
-
 // ---------------------------------------------------------
 // ------------------- Pose3 CASE -----------------------------
 // ---------------------------------------------------------
@@ -71,6 +62,15 @@ void WorldModel::AddEntity(int nodeId, double x, double y, double z, double roll
     Point3 newP = Point3(x, y, z);
     Pose3 newPose = Pose3(newR, newP);
     _initialEstimate.insert(nodeId, newPose);
+}
+
+void WorldModel::AddFactor(int fromNode, int toNode, double x, double y, double theta, double sigmaX, double sigmaY, double sigmaTheta)
+{
+    // add new factor to gtsam posegraph in the 2D case
+    auto noiseModel = noiseModel::Diagonal::Sigmas((Vector(6) << sigmaX, sigmaY, 0, 0, 0, sigmaTheta).finished());
+    Pose2 newMean2 = Pose2(x, y, theta);
+    Pose3 newMean = Pose3(newMean2);
+    _graph.emplace_shared<BetweenFactor<Pose3>>(fromNode, toNode, newMean, noiseModel);
 }
 
 void WorldModel::AddFactor(int fromNode, int toNode, double x, double y, double z, double roll, double pitch, double yaw, double sigmaX, double sigmaY, double sigmaZ, double sigmaRoll, double sigmaPitch, double sigmaYaw)
