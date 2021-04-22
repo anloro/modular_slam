@@ -1,7 +1,6 @@
 
 // my includes
 #include "WorldModel.h"
-#include "KeyFrame.cpp"
 
 #include <type_traits>
 
@@ -45,37 +44,11 @@ WorldModel::WorldModel()
 }
 
 // ---------------------------------------------------------
-// ------------------- Pose2 to Pose 3 CASE -----------------------------
+// ---------------- Interface with Gtsam -------------------
 // ---------------------------------------------------------
-// void WorldModel::AddEntity(int nodeId, double x, double y, double theta)
-// {
-//     // add new initial estimate of a node
-//     Pose2 newPose2 = Pose2(x, y, theta);
-//     Pose3 newPose = Pose3(newPose2);
-//     _initialEstimate.insert(nodeId, newPose);
-// }
 
-// ---------------------------------------------------------
-// ------------------- Pose3 CASE -----------------------------
-// ---------------------------------------------------------
-// static_assert(std::is_base_of<Entity, T>::value, "T must inherit from Entity");
-// template <>
-// void WorldModel::EntityContainer<LandMark>().AddEntity(int nodeId, double x, double y, double z)
-// {
-//     LandMark newFrame = LandMark(x, y, z);
-//     // add new initial estimate of a node
-//     // Rot3 newR = Rot3().Yaw(yaw).Pitch(pitch).Roll(roll);
-//     // Point3 newP = Point3(x, y, z);
-//     // Pose3 newPose = Pose3(newR, newP);
-//     // _initialEstimate.insert(nodeId, newPose);
-// }
-
-template <>
-void WorldModel::AddEntity <RefFrame>(int nodeId, double x, double y, double z, double roll, double pitch, double yaw)
+void WorldModel::AddInitialEstimate3ToGtsam(int nodeId, double x, double y, double z, double roll, double pitch, double yaw)
 {
-    RefFrame newFrame = RefFrame(x, y, z, roll, pitch, yaw);
-    _mimapa.insert(std::pair(8, newFrame));
-
     // add new initial estimate of a node in gtsam
     Rot3 newR = Rot3().Yaw(yaw).Pitch(pitch).Roll(roll);
     Point3 newP = Point3(x, y, z);
@@ -83,27 +56,63 @@ void WorldModel::AddEntity <RefFrame>(int nodeId, double x, double y, double z, 
     _initialEstimate.insert(nodeId, newPose);
 }
 
-// template <class T> 
-// void WorldModel::AddEntity <KeyFrame, T> (int nodeId, double x, double y, double z, double roll, double pitch, double yaw, T data)
-// {
-//     // KeyFrame newKeyFrame = KeyFrame(x, y, z, roll, pitch, yaw);
-//     // add new initial estimate of a node
-//     Rot3 newR = Rot3().Yaw(yaw).Pitch(pitch).Roll(roll);
-//     Point3 newP = Point3(x, y, z);
-//     Pose3 newPose = Pose3(newR, newP);
-//     _initialEstimate.insert(nodeId, newPose);
-// }
-
-template <>
-template <typename T>
-void WorldModel::AddEntity<KeyFrame>(int nodeId, double x, double y, double z, double roll, double pitch, double yaw, EntityContainer data)
+// ---------------------------------------------------------
+// ------------- Entity creation definitions ---------------
+// ---------------------------------------------------------
+void WorldModel::AddEntityLandMark(int nodeId, double x, double y, double z)
 {
-    // KeyFrame newKeyFrame = KeyFrame(x, y, z, roll, pitch, yaw);
+    LandMark newFrame = LandMark(x, y, z);
+}
+
+void WorldModel::AddEntityRefFrame(int nodeId, double x, double y, double z, double roll, double pitch, double yaw)
+{
+    RefFrame newFrame = RefFrame(x, y, z, roll, pitch, yaw);
+}
+
+// Pose2 to Pose3 case 
+void WorldModel::AddEntityKeyFrame(int nodeId, double x, double y, double theta)
+{
     // add new initial estimate of a node
-    Rot3 newR = Rot3().Yaw(yaw).Pitch(pitch).Roll(roll);
-    Point3 newP = Point3(x, y, z);
-    Pose3 newPose = Pose3(newR, newP);
-    _initialEstimate.insert(nodeId, newPose);
+    Pose2 newPose2 = Pose2(x, y, theta);
+    Pose3 newPose = Pose3(newPose2);
+    // get the rotation as yaw pitch roll
+    Rot3 R = newPose.rotation();
+    Vector3 yawpitchroll = R.ypr();
+    double yaw = yawpitchroll[0];
+    double pitch = yawpitchroll[1];
+    double roll = yawpitchroll[2];
+    // TODO possibly add the transform to the sensor reference frame
+    KeyFrame newFrame = KeyFrame(x, y, 0, roll, pitch, yaw);
+    // std::pair<int, KeyFrame> newPair = std::pair(nodeId, newFrame);
+    _myKeyFrameMap.insert(std::make_pair(nodeId, newFrame));
+    AddInitialEstimate3ToGtsam(nodeId, x, y, 0, roll, pitch, yaw);
+}
+
+void WorldModel::AddEntityKeyFrame(int nodeId, double x, double y, double z, double roll, double pitch, double yaw)
+{
+    KeyFrame newFrame = KeyFrame(x, y, z, roll, pitch, yaw);
+    AddInitialEstimate3ToGtsam(nodeId, x, y, z, roll, pitch, yaw);
+}
+
+template <typename T>
+void WorldModel::AddEntityKeyFrame(int nodeId, double x, double y, double z, double roll, double pitch, double yaw, T data)
+{
+    KeyFrame newKeyFrame = KeyFrame(x, y, z, roll, pitch, yaw, data);
+    AddInitialEstimate3ToGtsam(nodeId, x, y, z, roll, pitch, yaw);
+}
+
+template <typename T, typename U>
+void WorldModel::AddEntityKeyFrame(int nodeId, double x, double y, double z, double roll, double pitch, double yaw, T data1, U data2)
+{
+    KeyFrame newKeyFrame = KeyFrame(x, y, z, roll, pitch, yaw, data1, data2);
+    AddInitialEstimate3ToGtsam(nodeId, x, y, z, roll, pitch, yaw);
+}
+
+template <typename T, typename U, typename V>
+void WorldModel::AddEntityKeyFrame(int nodeId, double x, double y, double z, double roll, double pitch, double yaw, T data1, U data2, V data3)
+{
+    KeyFrame newKeyFrame = KeyFrame(x, y, z, roll, pitch, yaw, data1, data2, data3);
+    AddInitialEstimate3ToGtsam(nodeId, x, y, z, roll, pitch, yaw);
 }
 
 void WorldModel::AddFactor(int fromNode, int toNode, double x, double y, double theta, double sigmaX, double sigmaY, double sigmaTheta)
