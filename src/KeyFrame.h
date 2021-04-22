@@ -11,15 +11,16 @@
 #include <tuple>
 
 // Add more typenames if needed now we have 3 (i.e Image, LiDAR, Features)
-
+template <typename... Ts>
 class KeyFrame : public RefFrame
 {
 public:
     // Constructors
     KeyFrame(double x, double y, double z, double roll, double pitch, double yaw);
-    template <typename... Ts>
+    // template <typename... Ts>
     KeyFrame(double x, double y, double z, double roll, double pitch, double yaw, Ts &...t);
 
+    std::tuple<Ts...> GetData();
     // // template <class T>
     // // KeyFrame(double x, double y, double z, double roll, double pitch, double yaw, Traits data);
     // // template <class T, class U>
@@ -47,5 +48,5 @@ public:
     // // };
 
 protected:
-    std::tuple<> *_rawData;
+    std::tuple<Ts...> _rawData;
 };

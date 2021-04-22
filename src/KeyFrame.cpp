@@ -7,7 +7,8 @@
 
 #include "KeyFrame.h"
 
-KeyFrame::KeyFrame(double x, double y, double z, double roll, double pitch, double yaw)
+template<>
+KeyFrame<int>::KeyFrame(double x, double y, double z, double roll, double pitch, double yaw)
 {
     _x = x;
     _y = y;
@@ -18,7 +19,7 @@ KeyFrame::KeyFrame(double x, double y, double z, double roll, double pitch, doub
 }
 
 template <class... Ts>
-KeyFrame::KeyFrame(double x, double y, double z, double roll, double pitch, double yaw, Ts &...data)
+KeyFrame<Ts...>::KeyFrame(double x, double y, double z, double roll, double pitch, double yaw, Ts &...data)
 {
     _x = x;
     _y = y;
@@ -26,7 +27,15 @@ KeyFrame::KeyFrame(double x, double y, double z, double roll, double pitch, doub
     _roll = roll;
     _pitch = pitch;
     _yaw = yaw;
-    std::tuple<Ts...> rawData = tuple(data...)
+    std::tuple<Ts...> rawData = std::tuple(data...);
+    _rawData = rawData;
+
+}
+
+template <class... Ts>
+std::tuple<Ts...> KeyFrame<Ts...>::GetData()
+{
+    return _rawData;
 }
 
 // template <class T, class U, class V>
@@ -84,7 +93,9 @@ int main()
         char c = 'c';
     }thisstruct;
 
-    KeyFrame newKF = KeyFrame(0, 0, 0, 0, 0, 0, thisstruct);
+    KeyFrame<mystructure> newKF = KeyFrame<mystructure>(0, 0, 0, 0, 0, 0, thisstruct);
+    std::tuple a = newKF.GetData();
+    int aa = std::get<0>(a).b;
     std::tuple tKF = newKF.GetTranslationalVector();
     double xKF = std::get<0>(tKF);
     double yKF = std::get<1>(tKF);
