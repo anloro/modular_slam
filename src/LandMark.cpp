@@ -6,8 +6,13 @@
  */
 
 #include <tuple>
+#include <iostream>
 
-class LandMark{
+class Entity{};
+
+// Entity::Entity(){}
+
+class LandMark : Entity{
     public:
         // Constructors
         LandMark(double x, double y, double z);

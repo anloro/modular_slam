@@ -1,6 +1,9 @@
 
 // my includes
 #include "WorldModel.h"
+#include "KeyFrame.cpp"
+
+#include <type_traits>
 
 // includes to create the custom graph
 #include <opencv2/core/core.hpp>
@@ -44,19 +47,58 @@ WorldModel::WorldModel()
 // ---------------------------------------------------------
 // ------------------- Pose2 to Pose 3 CASE -----------------------------
 // ---------------------------------------------------------
-void WorldModel::AddEntity(int nodeId, double x, double y, double theta)
-{
-    // add new initial estimate of a node
-    Pose2 newPose2 = Pose2(x, y, theta);
-    Pose3 newPose = Pose3(newPose2);
-    _initialEstimate.insert(nodeId, newPose);
-}
+// void WorldModel::AddEntity(int nodeId, double x, double y, double theta)
+// {
+//     // add new initial estimate of a node
+//     Pose2 newPose2 = Pose2(x, y, theta);
+//     Pose3 newPose = Pose3(newPose2);
+//     _initialEstimate.insert(nodeId, newPose);
+// }
 
 // ---------------------------------------------------------
 // ------------------- Pose3 CASE -----------------------------
 // ---------------------------------------------------------
-void WorldModel::AddEntity(int nodeId, double x, double y, double z, double roll, double pitch, double yaw)
+// static_assert(std::is_base_of<Entity, T>::value, "T must inherit from Entity");
+// template <>
+// void WorldModel::EntityContainer<LandMark>().AddEntity(int nodeId, double x, double y, double z)
+// {
+//     LandMark newFrame = LandMark(x, y, z);
+//     // add new initial estimate of a node
+//     // Rot3 newR = Rot3().Yaw(yaw).Pitch(pitch).Roll(roll);
+//     // Point3 newP = Point3(x, y, z);
+//     // Pose3 newPose = Pose3(newR, newP);
+//     // _initialEstimate.insert(nodeId, newPose);
+// }
+
+template <>
+void WorldModel::AddEntity <RefFrame>(int nodeId, double x, double y, double z, double roll, double pitch, double yaw)
 {
+    RefFrame newFrame = RefFrame(x, y, z, roll, pitch, yaw);
+    _mimapa.insert(std::pair(8, newFrame));
+
+    // add new initial estimate of a node in gtsam
+    Rot3 newR = Rot3().Yaw(yaw).Pitch(pitch).Roll(roll);
+    Point3 newP = Point3(x, y, z);
+    Pose3 newPose = Pose3(newR, newP);
+    _initialEstimate.insert(nodeId, newPose);
+}
+
+// template <class T> 
+// void WorldModel::AddEntity <KeyFrame, T> (int nodeId, double x, double y, double z, double roll, double pitch, double yaw, T data)
+// {
+//     // KeyFrame newKeyFrame = KeyFrame(x, y, z, roll, pitch, yaw);
+//     // add new initial estimate of a node
+//     Rot3 newR = Rot3().Yaw(yaw).Pitch(pitch).Roll(roll);
+//     Point3 newP = Point3(x, y, z);
+//     Pose3 newPose = Pose3(newR, newP);
+//     _initialEstimate.insert(nodeId, newPose);
+// }
+
+template <>
+template <typename T>
+void WorldModel::AddEntity<KeyFrame>(int nodeId, double x, double y, double z, double roll, double pitch, double yaw, EntityContainer data)
+{
+    // KeyFrame newKeyFrame = KeyFrame(x, y, z, roll, pitch, yaw);
     // add new initial estimate of a node
     Rot3 newR = Rot3().Yaw(yaw).Pitch(pitch).Roll(roll);
     Point3 newP = Point3(x, y, z);
@@ -110,17 +152,17 @@ int main()
     WorldModel myWorld = WorldModel();
 
     // // Test the WorldModel constructors for 2D
-    myWorld.AddFactor(1, 2, 2, 0, 0, 0.2, 0.2, 0.1);
-    myWorld.AddFactor(2, 3, 2, 0, M_PI_2, 0.2, 0.2, 0.1);
-    myWorld.AddFactor(3, 4, 2, 0, M_PI_2, 0.2, 0.2, 0.1);
-    myWorld.AddFactor(4, 5, 2, 0, M_PI_2, 0.2, 0.2, 0.1);
-    myWorld.AddFactor(5, 2, 2, 0, M_PI_2, 0.2, 0.2, 0.1);
-    // add the initial estimates
-    myWorld.AddEntity(1, 0.5, 0.0, 0.2);
-    myWorld.AddEntity(2, 2.3, 0.1, -0.2);
-    myWorld.AddEntity(3, 4.1, 0.1, M_PI_2);
-    myWorld.AddEntity(4, 4.0, 2.0, M_PI);
-    myWorld.AddEntity(5, 2.1, 2.1, -M_PI_2);
+    // myWorld.AddFactor(1, 2, 2, 0, 0, 0.2, 0.2, 0.1);
+    // myWorld.AddFactor(2, 3, 2, 0, M_PI_2, 0.2, 0.2, 0.1);
+    // myWorld.AddFactor(3, 4, 2, 0, M_PI_2, 0.2, 0.2, 0.1);
+    // myWorld.AddFactor(4, 5, 2, 0, M_PI_2, 0.2, 0.2, 0.1);
+    // myWorld.AddFactor(5, 2, 2, 0, M_PI_2, 0.2, 0.2, 0.1);
+    // // add the initial estimates
+    // myWorld.AddEntity(1, 0.5, 0.0, 0.2);
+    // myWorld.AddEntity(2, 2.3, 0.1, -0.2);
+    // myWorld.AddEntity(3, 4.1, 0.1, M_PI_2);
+    // myWorld.AddEntity(4, 4.0, 2.0, M_PI);
+    // myWorld.AddEntity(5, 2.1, 2.1, -M_PI_2);
 
     // Test the WorldModel constructors for 3D
     // myWorld.AddFactor(1, 2, 2, 0, 0, 0, 0,      0, 0.2, 0.2, 0, 0, 0, 0.1);
