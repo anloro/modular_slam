@@ -18,6 +18,8 @@ public:
     // Constructors
     KeyFrame(double x, double y, double z, double roll, double pitch, double yaw);
     KeyFrame(double x, double y, double z, double roll, double pitch, double yaw, Ts &...t);
+    // The compiler takes care of the default constructor
+    KeyFrame() = default;
 
     template <typename T>
     T GetData();
@@ -25,3 +27,35 @@ public:
 protected:
     std::tuple<Ts...> _rawData;
 };
+
+template <>
+KeyFrame<int>::KeyFrame(double x, double y, double z, double roll, double pitch, double yaw)
+{
+    _x = x;
+    _y = y;
+    _z = z;
+    _roll = roll;
+    _pitch = pitch;
+    _yaw = yaw;
+}
+
+template <class... Ts>
+KeyFrame<Ts...>::KeyFrame(double x, double y, double z, double roll, double pitch, double yaw, Ts &...data)
+{
+    _x = x;
+    _y = y;
+    _z = z;
+    _roll = roll;
+    _pitch = pitch;
+    _yaw = yaw;
+    std::tuple<Ts...> rawData = std::tuple(data...);
+    _rawData = rawData;
+}
+
+template <typename... Ts>
+template <typename T>
+T KeyFrame<Ts...>::GetData()
+{
+    T element = std::get<T>(_rawData);
+    return element;
+}
