@@ -27,7 +27,6 @@ KeyFrame<Ts...>::KeyFrame(double x, double y, double z, double roll, double pitc
     _roll = roll;
     _pitch = pitch;
     _yaw = yaw;
-    // _rawData.Tuple = rawData;
     std::tuple<Ts...> rawData = std::tuple(data...);
     _rawData = rawData;
 
@@ -35,41 +34,12 @@ KeyFrame<Ts...>::KeyFrame(double x, double y, double z, double roll, double pitc
 
 template <typename... Ts>
 template <typename T>
-T KeyFrame<Ts...>::GetData(int N)
+T KeyFrame<Ts...>::GetData()
 {
     T element = std::get<T>(_rawData);
-    // using Nth = typename std::tuple_element<N, Tuple>::type;
-    // T myObject = std::tuple_element<i, _rawData>::T;
     return element;
 
 }
-
-// template <class T, class U, class V>
-// KeyFrame<T, U, V>::KeyFrame(double x, double y, double z, double roll, double pitch, double yaw, T data1, U data2)
-// {
-//     _x = x;
-//     _y = y;
-//     _z = z;
-//     _roll = roll;
-//     _pitch = pitch;
-//     _yaw = yaw;
-//     _rawData.SensorData1 = data1;
-//     _rawData.SensorData2 = data2;
-// }
-
-// template <class T, class U, class V>
-// KeyFrame<T, U, V>::KeyFrame(double x, double y, double z, double roll, double pitch, double yaw, T data1, U data2, V data3)
-// {
-//     _x = x;
-//     _y = y;
-//     _z = z;
-//     _roll = roll;
-//     _pitch = pitch;
-//     _yaw = yaw;
-//     _rawData.SensorData1 = data1;
-//     _rawData.SensorData2 = data2;
-//     _rawData.SensorData3 = data3;
-// }
 
 int main()
 {
@@ -100,8 +70,7 @@ int main()
     }thisstruct;
 
     KeyFrame<mystructure> newKF = KeyFrame<mystructure>(0, 0, 0, 0, 0, 0, thisstruct);
-    mystructure myObject = newKF.GetData<mystructure>(0);
-    // mystructure myObject = newKF.GetData<mystructure>(0);
+    mystructure myObject = newKF.GetData<mystructure>();
     int myb = myObject.b;
     std::cout << "I stored this inside the KF: (" << myb << ")" << std::endl;
     std::tuple tKF = newKF.GetTranslationalVector();
