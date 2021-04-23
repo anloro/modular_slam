@@ -20,7 +20,8 @@ public:
     // template <typename... Ts>
     KeyFrame(double x, double y, double z, double roll, double pitch, double yaw, Ts &...t);
 
-    std::tuple<Ts...> GetData();
+    template <typename T>
+    T GetData(int N);
     // // template <class T>
     // // KeyFrame(double x, double y, double z, double roll, double pitch, double yaw, Traits data);
     // // template <class T, class U>
@@ -28,12 +29,14 @@ public:
     // // // template <class T, class U, class V>
     // // KeyFrame(double x, double y, double z, double roll, double pitch, double yaw, T data1, U data2, V data3);
     // template <typename... Ts>
-    // struct Traits
+    // struct myTraits
     // {
-    //     using Tuple = std::tuple<Ts...>;
+    //     // using Tuple = std::tuple<Ts...>;
+    //     std::tuple<Ts...> Tuple;
     //     static constexpr auto Size = sizeof...(Ts);
-    //     // template <std::size_t N>
+    //     template <std::size_t N>
     //     // using Nth = typename std::tuple_element<N, Tuple>::type;
+    //     Nth = typename std::tuple_element<N, Tuple>::type;
     //     // using First = Nth<0>;
     //     // using Last = Nth<Size - 1>;
     // };
@@ -46,7 +49,9 @@ public:
     // //     U *SensorData2;
     // //     V *SensorData3;
     // // };
+    using Tuple = std::tuple<Ts...>;
 
 protected:
+    // myTraits _rawData;
     std::tuple<Ts...> _rawData;
 };

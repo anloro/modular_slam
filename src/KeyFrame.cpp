@@ -27,15 +27,21 @@ KeyFrame<Ts...>::KeyFrame(double x, double y, double z, double roll, double pitc
     _roll = roll;
     _pitch = pitch;
     _yaw = yaw;
+    // _rawData.Tuple = rawData;
     std::tuple<Ts...> rawData = std::tuple(data...);
     _rawData = rawData;
 
 }
 
-template <class... Ts>
-std::tuple<Ts...> KeyFrame<Ts...>::GetData()
+template <typename... Ts>
+template <typename T>
+T KeyFrame<Ts...>::GetData(int N)
 {
-    return _rawData;
+    T element = std::get<T>(_rawData);
+    // using Nth = typename std::tuple_element<N, Tuple>::type;
+    // T myObject = std::tuple_element<i, _rawData>::T;
+    return element;
+
 }
 
 // template <class T, class U, class V>
@@ -94,8 +100,10 @@ int main()
     }thisstruct;
 
     KeyFrame<mystructure> newKF = KeyFrame<mystructure>(0, 0, 0, 0, 0, 0, thisstruct);
-    std::tuple a = newKF.GetData();
-    int aa = std::get<0>(a).b;
+    mystructure myObject = newKF.GetData<mystructure>(0);
+    // mystructure myObject = newKF.GetData<mystructure>(0);
+    int myb = myObject.b;
+    std::cout << "I stored this inside the KF: (" << myb << ")" << std::endl;
     std::tuple tKF = newKF.GetTranslationalVector();
     double xKF = std::get<0>(tKF);
     double yKF = std::get<1>(tKF);
