@@ -101,7 +101,8 @@ void WorldModel::AddEntityRefFrame(int nodeId, double x, double y, double z, dou
 // template <typename... Ts>
 // void WorldModel::AddEntityKeyFrame(int nodeId, double x, double y, double z, double roll, double pitch, double yaw, Ts... data)
 // {
-//     KeyFrame<Ts...> newKeyFrame = KeyFrame<Ts...>(x, y, z, roll, pitch, yaw, data);
+//     KeyFrame<Ts...> newKeyFrame;
+//     newKeyFrame = KeyFrame<Ts...>(x, y, z, roll, pitch, yaw, data...);
 //     AddInitialEstimate3ToGtsam(nodeId, x, y, z, roll, pitch, yaw);
 // }
 
@@ -148,7 +149,7 @@ void WorldModel::Optimize(){
 
 int main()
 {
-    WorldModel myWorld = WorldModel();
+    WorldModel myWorld;
 
     // // Test the WorldModel constructors for 2D
     // myWorld.AddFactor(1, 2, 2, 0, 0, 0.2, 0.2, 0.1);
@@ -201,8 +202,11 @@ int main()
         int b ;
         char c;
     };
-
     mystructure thisstruct {0, 23, 'a'};
+
+    // int myint = 25;
+    // myWorld.AddEntityKeyFrame(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, thisstruct);
+
     KeyFrame<mystructure> newKF = KeyFrame<mystructure>(0, 0, 0, 0, 0, 0, thisstruct);
     mystructure myObject = newKF.GetData<mystructure>();
     int myb = myObject.b;
