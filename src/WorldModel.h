@@ -35,19 +35,22 @@
 
         void AddInitialEstimate3ToGtsam(int nodeId, double x, double y, double z, double roll, double pitch, double yaw);
         // Entity creation
-        void AddEntityLandMark(int nodeId, double x, double y, double z);
-        void AddEntityRefFrame(int nodeId, double x, double y, double z, double roll, double pitch, double yaw);
-        // void AddEntityKeyFrame(int nodeId, double x, double y, double theta);
-        // void AddEntityKeyFrame(int nodeId, double x, double y, double z, double roll, double pitch, double yaw);
-        // template <class... Ts> 
-        // void AddEntityKeyFrame(int nodeId, double x, double y, double z, double roll, double pitch, double yaw, Ts ...data);
         template <typename T>
         void AddEntity(int id, T entity);
         template <typename T>
         T GetEntity(int id);
+        // void AddEntityLandMark(int nodeId, double x, double y, double z);
+        // void AddEntityRefFrame(int nodeId, double x, double y, double z, double roll, double pitch, double yaw);
+        // void AddEntityKeyFrame(int nodeId, double x, double y, double theta);
+        // void AddEntityKeyFrame(int nodeId, double x, double y, double z, double roll, double pitch, double yaw);
+        // template <class... Ts> 
+        // void AddEntityKeyFrame(int nodeId, double x, double y, double z, double roll, double pitch, double yaw, Ts ...data);
         // Factor creation
-        void AddFactor(int fromNode, int toNode, double x, double y, double theta, double sigmaX, double sigmaY, double sigmaTheta);
-        void AddFactor(int fromNode, int toNode, double x, double y, double z, double roll, double pitch, double yaw, double sigmaX, double sigmaY, double sigmaZ, double sigmaRoll, double sigmaPitch, double sigmaYaw);
+        void AddPoseFactor(int fromNode, int toNode, double x, double y, double theta, double sigmaX, double sigmaY, double sigmaTheta);
+        void AddPoseFactor(int fromNode, int toNode, double x, double y, double z, double roll, double pitch, double yaw, double sigmaX, double sigmaY, double sigmaZ, double sigmaRoll, double sigmaPitch, double sigmaYaw);
+        // void AddBearingOnlyFactor(int fromNode, int toNode, double bearing, double sigmaBearing);
+        void AddRangeOnlyFactor(int fromNode, int toNode, double range, double sigmaRange);
+
         // Optimization
         void Optimize();
 
