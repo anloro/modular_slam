@@ -9,6 +9,7 @@
 // my includes
 // #include "Entity.h"
 #include "KeyFrame.h"
+#include <boost/any.hpp>
 
 // includes to create the custom graph
 #include <opencv2/core/core.hpp>
@@ -26,7 +27,7 @@
 #include <iostream>
 #include <chrono>
 
-class WorldModel
+    class WorldModel
 {
     public:
         // Constructor
@@ -38,8 +39,12 @@ class WorldModel
         void AddEntityRefFrame(int nodeId, double x, double y, double z, double roll, double pitch, double yaw);
         // void AddEntityKeyFrame(int nodeId, double x, double y, double theta);
         // void AddEntityKeyFrame(int nodeId, double x, double y, double z, double roll, double pitch, double yaw);
-        template <class... Ts> 
-        void AddEntityKeyFrame(int nodeId, double x, double y, double z, double roll, double pitch, double yaw, Ts ...data);
+        // template <class... Ts> 
+        // void AddEntityKeyFrame(int nodeId, double x, double y, double z, double roll, double pitch, double yaw, Ts ...data);
+        template <typename T>
+        void AddEntity(int id, T entity);
+        template <typename T>
+        T GetEntity(int id);
         // Factor creation
         void AddFactor(int fromNode, int toNode, double x, double y, double theta, double sigmaX, double sigmaY, double sigmaTheta);
         void AddFactor(int fromNode, int toNode, double x, double y, double z, double roll, double pitch, double yaw, double sigmaX, double sigmaY, double sigmaZ, double sigmaRoll, double sigmaPitch, double sigmaYaw);
@@ -47,21 +52,30 @@ class WorldModel
         void Optimize();
 
     // private :
-        // save the info of the custom pose graph
-        // std::vector<Entity> _entities;
-        // Factor _factors;
-
-        // save the info for gtsam
+        // Map 
+        std::map<int, boost::any> _myMap;
+        // Data for gtsam
         gtsam::NonlinearFactorGraph _graph;
         gtsam::Values _initialEstimate;
         gtsam::Values _result;
-        // std::map<int, KeyFrame> _myKeyFrameMap;
 };
 
-template <class... Ts>
-void WorldModel::AddEntityKeyFrame(int nodeId, double x, double y, double z, double roll, double pitch, double yaw, Ts ...data)
+template <typename T>
+void WorldModel::AddEntity(int id, T entity)
 {
-    KeyFrame<Ts...> newKeyFrame;
-    newKeyFrame = KeyFrame<Ts...>(x, y, z, roll, pitch, yaw, std::forward<Ts...>(data)...);
-    AddInitialEstimate3ToGtsam(nodeId, x, y, z, roll, pitch, yaw);
+    _myMap.insert(std::make_pair(id, entity));
 }
+
+template <typename T>
+T WorldModel::GetEntity(int id)
+{
+    return boost::any_cast<T>(_myMap[id]);
+}
+
+// template <class... Ts>
+// void WorldModel::AddEntityKeyFrame(int nodeId, double x, double y, double z, double roll, double pitch, double yaw, Ts ...data)
+// {
+//     KeyFrame<Ts...> newKeyFrame;
+//     newKeyFrame = KeyFrame<Ts...>(x, y, z, roll, pitch, yaw, std::forward<Ts...>(data)...);
+//     AddInitialEstimate3ToGtsam(nodeId, x, y, z, roll, pitch, yaw);
+// }

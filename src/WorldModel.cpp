@@ -204,9 +204,6 @@ int main()
     };
     mystructure thisstruct {0, 23, 'a'};
 
-    // int myint = 25;
-    // myWorld.AddEntityKeyFrame(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, thisstruct);
-
     KeyFrame<mystructure> newKF = KeyFrame<mystructure>(0, 0, 0, 0, 0, 0, thisstruct);
     mystructure myObject = newKF.GetData<mystructure>();
     int myb = myObject.b;
@@ -222,6 +219,15 @@ int main()
     double pitchKF = std::get<1>(rKF);
     double yawKF = std::get<2>(rKF);
     std::cout << "My KF rotational vector: (" << rollKF << ", " << pitchKF << ", " << yawKF << ")" << std::endl;
+
+    // myWorld._myMap.insert(std::make_pair(1, newKF));
+    // KeyFrame<mystructure> storedKF = boost::any_cast<KeyFrame<mystructure>>(myWorld._myMap[1]);
+
+    myWorld.AddEntity(1, newKF);
+    KeyFrame<mystructure> storedKF = myWorld.GetEntity<KeyFrame<mystructure>>(1);
+    mystructure myStoredObject = storedKF.GetData<mystructure>();
+    int mystoredb = myStoredObject.b;
+    std::cout << "I stored this inside the entity map: (" << mystoredb << ")" << std::endl;
 
     // optimize
     // myWorld.Optimize();
