@@ -1,6 +1,6 @@
 /**
  * @file   WorldModel.h
- * @brief  Defines the Key-Frame Entity.
+ * @brief  World model declarations and templates.
  * @author Ángel Lorente Rogel
  * @date   19/04/2021
  */
@@ -12,7 +12,6 @@
 #include <boost/any.hpp>
 
 // includes to create the custom graph
-#include <opencv2/core/core.hpp>
 #include <gtsam/geometry/Pose3.h>
 #include <gtsam/slam/BetweenFactor.h>
 // includes to the gtsam graph
@@ -27,7 +26,7 @@
 #include <iostream>
 #include <chrono>
 
-    class WorldModel
+class WorldModel
 {
     public:
         // Constructor

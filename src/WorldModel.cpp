@@ -1,6 +1,6 @@
 /**
  * @file   WorldModel.cpp
- * @brief  Defines the Key-Frame Entity.
+ * @brief  WorldModel definitions.
  * @author Ángel Lorente Rogel
  * @date   19/04/2021
  */
@@ -12,7 +12,6 @@
 #include <gtsam/sam/BearingFactor.h>
 
 // includes to create the custom graph
-#include <opencv2/core/core.hpp>
 #include <gtsam/geometry/Pose3.h>
 #include <gtsam/geometry/Rot3.h>
 #include <gtsam/slam/BetweenFactor.h>
