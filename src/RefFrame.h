@@ -7,9 +7,12 @@
 
 #pragma once
 
-#include "LandMark.h"
+#include <tuple>
+#include <iostream>
 
-class RefFrame : public LandMark
+namespace anloro{
+
+class RefFrame
 {
 public:
     // Constructors
@@ -17,9 +20,14 @@ public:
     // The compiler takes care of the default constructor
     RefFrame() = default;
     // Member functions
+    void SetTranslationalVector(double x, double y, double z);
+    std::tuple<double, double, double> GetTranslationalVector();
     void SetRotationalVector(double x, double y, double z);
     std::tuple<double, double, double> GetRotationalVector();
+    void GetTranslationalAndEulerAngles(double &x, double &y, double &z, double &roll, double &pitch, double &yaw);
 
 protected:
-    double _roll, _pitch, _yaw;
+    double _x, _y, _z, _roll, _pitch, _yaw;
 };
+
+} // namespace anloro

@@ -11,6 +11,8 @@
 #include <tuple>
 
 
+namespace anloro{
+
 template <typename... Ts>
 class KeyFrame : public RefFrame
 {
@@ -27,17 +29,6 @@ public:
 protected:
     std::tuple<Ts...> _rawData;
 };
-
-template <>
-KeyFrame<int>::KeyFrame(double x, double y, double z, double roll, double pitch, double yaw)
-{
-    _x = x;
-    _y = y;
-    _z = z;
-    _roll = roll;
-    _pitch = pitch;
-    _yaw = yaw;
-}
 
 template <class... Ts>
 KeyFrame<Ts...>::KeyFrame(double x, double y, double z, double roll, double pitch, double yaw, Ts &...data)
@@ -59,3 +50,5 @@ T KeyFrame<Ts...>::GetData()
     T element = std::get<T>(_rawData);
     return element;
 }
+
+} // namespace anloro

@@ -6,25 +6,25 @@
  */
 
 #pragma once
+
 // my includes
-// #include "Entity.h"
 #include "KeyFrame.h"
+#include "PoseFactor.h"
+
 #include <boost/any.hpp>
 
-// includes to create the custom graph
+// includes to gtsam 
 #include <gtsam/geometry/Pose3.h>
 #include <gtsam/slam/BetweenFactor.h>
-// includes to the gtsam graph
 #include <gtsam/nonlinear/NonlinearFactorGraph.h>
 #include <gtsam/nonlinear/Values.h>
-
 #include <gtsam/nonlinear/GaussNewtonOptimizer.h>
-// #include <gtsam/geometry/Pose2.h>
-// #include <gtsam/inference/Key.h>
-// #include <gtsam/nonlinear/Marginals.h>
 
 #include <iostream>
 #include <chrono>
+
+
+namespace anloro{
 
 class WorldModel
 {
@@ -32,31 +32,46 @@ class WorldModel
         // Constructor
         WorldModel();
 
+        // Member functions
         void AddInitialEstimate3ToGtsam(int nodeId, double x, double y, double z, double roll, double pitch, double yaw);
         // Entity creation
+        void AddRefFrameEntity(RefFrame * refFrame);
+        void AddKeyFrameEntity(int nodeId, KeyFrame<int> * keyFrame);
+        void AddPoseFactor(PoseFactor * poseFactor);
         template <typename T>
         void AddEntity(int id, T entity);
         template <typename T>
         T GetEntity(int id);
-        // void AddEntityLandMark(int nodeId, double x, double y, double z);
-        // void AddEntityRefFrame(int nodeId, double x, double y, double z, double roll, double pitch, double yaw);
-        // void AddEntityKeyFrame(int nodeId, double x, double y, double theta);
-        // void AddEntityKeyFrame(int nodeId, double x, double y, double z, double roll, double pitch, double yaw);
-        // template <class... Ts> 
-        // void AddEntityKeyFrame(int nodeId, double x, double y, double z, double roll, double pitch, double yaw, Ts ...data);
         // Factor creation
         void AddPoseFactor(int fromNode, int toNode, double x, double y, double theta, double sigmaX, double sigmaY, double sigmaTheta);
-        void AddPoseFactor(int fromNode, int toNode, double x, double y, double z, double roll, double pitch, double yaw, double sigmaX, double sigmaY, double sigmaZ, double sigmaRoll, double sigmaPitch, double sigmaYaw);
-        // void AddBearingOnlyFactor(int fromNode, int toNode, double bearing, double sigmaBearing);
         void AddRangeOnlyFactor(int fromNode, int toNode, double range, double sigmaRange);
+        // void AddBearingOnlyFactor(int fromNode, int toNode, double bearing, double sigmaBearing);
+        int InternalMapId(int id);
 
         // Optimization
         void Optimize();
 
-    // private :
+        // Definitions for easier readability
+        typedef std::map<int, RefFrame*> RefFramesMap;
+        typedef std::pair<int, RefFrame*> RefFramePair;
+        typedef std::map<int, KeyFrame<int>*> KeyFramesMap;
+        typedef std::pair<int, KeyFrame<int>*> KeyFramePair;
+        typedef std::map<int, PoseFactor*> PoseFactorsMap;
+        typedef std::pair<int, PoseFactor*> PoseFactorPair;
+
+    protected :
         // Map 
         std::map<int, boost::any> _myMap;
-        // Data for gtsam
+        RefFramesMap _refFramesMap;
+        KeyFramesMap _keyFramesMap;
+        PoseFactorsMap _poseFactorsMap;
+
+        // RTABMAP'S INTERFACE DATA
+        // Map Rtab-Map id into this framework id
+        std::map<int, int> _rtabToModular;
+        // Map this framework id into Rtab-Map id
+        std::map<int, int> _modularToRtab;
+        // GTSAM'S INTERFACE DATA
         gtsam::NonlinearFactorGraph _graph;
         gtsam::Values _initialEstimate;
         gtsam::Values _result;
@@ -65,7 +80,11 @@ class WorldModel
 template <typename T>
 void WorldModel::AddEntity(int id, T entity)
 {
-    _myMap.insert(std::make_pair(id, entity));
+    int internalId;
+    internalId = InternalMapId(id);
+    // Add the entity to the global map
+    _myMap.insert(std::make_pair(internalId, entity));
+    std::cout << "The id " << id << " maps into internal id " << internalId << std::endl;
 }
 
 template <typename T>
@@ -74,10 +93,4 @@ T WorldModel::GetEntity(int id)
     return boost::any_cast<T>(_myMap[id]);
 }
 
-// template <class... Ts>
-// void WorldModel::AddEntityKeyFrame(int nodeId, double x, double y, double z, double roll, double pitch, double yaw, Ts ...data)
-// {
-//     KeyFrame<Ts...> newKeyFrame;
-//     newKeyFrame = KeyFrame<Ts...>(x, y, z, roll, pitch, yaw, std::forward<Ts...>(data)...);
-//     AddInitialEstimate3ToGtsam(nodeId, x, y, z, roll, pitch, yaw);
-// }
+} // namespace anloro

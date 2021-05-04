@@ -11,7 +11,10 @@
 // class mySerializableEntity{};
 
 // Entity::Entity(){}
-
+// I will have to mofify this to have an id to the node it is related to,
+//  it has to inherit from refence frame class and allow storing features 
+//  and also we have to make it to work with gtsam as an extra constraint.
+// Or maybe put it directly as a field in a keyframe.
 class LandMark
 {
 public:
