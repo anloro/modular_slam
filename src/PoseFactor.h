@@ -22,6 +22,10 @@ public:
     void SetTranslationalVector(double x, double y, double z);
     void SetRotationalVector(double x, double y, double z);
     void GetTranslationalAndEulerAngles(double &x, double &y, double &z, double &roll, double &pitch, double &yaw);
+    void GetEulerVariances(double &sigmaX, double &sigmaY, double &sigmaZ, double &sigmaRoll, double &sigmaPitch, double &sigmaYaw);
+
+    int From();
+    int To();
 
 protected:
     int _from, _to;

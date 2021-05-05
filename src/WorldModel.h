@@ -44,6 +44,7 @@ class WorldModel
         T GetEntity(int id);
         // Factor creation
         void AddPoseFactor(int fromNode, int toNode, double x, double y, double theta, double sigmaX, double sigmaY, double sigmaTheta);
+        void AddPoseFactor(int fromNode, int toNode, double x, double y, double z, double roll, double pitch, double yaw, double sigmaX, double sigmaY, double sigmaZ, double sigmaRoll, double sigmaPitch, double sigmaYaw);
         void AddRangeOnlyFactor(int fromNode, int toNode, double range, double sigmaRange);
         // void AddBearingOnlyFactor(int fromNode, int toNode, double bearing, double sigmaBearing);
         int InternalMapId(int id);

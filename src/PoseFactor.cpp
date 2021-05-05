@@ -48,3 +48,23 @@ void anloro::PoseFactor::GetTranslationalAndEulerAngles(double &x, double &y, do
     pitch = PoseFactor::_pitch;
     yaw = PoseFactor::_yaw;
 }
+
+void anloro::PoseFactor::GetEulerVariances(double &sigmaX, double &sigmaY, double &sigmaZ, double &sigmaRoll, double &sigmaPitch, double &sigmaYaw)
+{
+    sigmaX = PoseFactor::_sigmaX;
+    sigmaY = PoseFactor::_sigmaY;
+    sigmaZ = PoseFactor::_sigmaZ;
+    sigmaRoll = PoseFactor::_sigmaRoll;
+    sigmaPitch = PoseFactor::_sigmaPitch;
+    sigmaYaw = PoseFactor::_sigmaYaw;
+}
+
+int anloro::PoseFactor::From()
+{
+    return _from;
+}
+
+int anloro::PoseFactor::To()
+{
+    return _to;
+}
