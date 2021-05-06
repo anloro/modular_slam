@@ -107,7 +107,7 @@ void anloro::WorldModel::Optimize()
 {
     NonlinearFactorGraph graph;
     Values initialEstimate;
-    Values result;
+    Values optimizedPoses;
 
     // Add a prior on the first pose, setting it to the origin
     int initId = 0;
@@ -147,21 +147,40 @@ void anloro::WorldModel::Optimize()
 
     GaussNewtonParams parameters;
     GaussNewtonOptimizer optimizer(graph, initialEstimate, parameters);
-    result = optimizer.optimize();
+    optimizedPoses = optimizer.optimize();
 
     // This is for testing
-    result.print("Final Result:\n");
-    // 5. Calculate and print marginal covariances for all variables
+    optimizedPoses.print("Optimized poses:\n");
+    // Calculate and print marginal covariances for all variables
     std::cout.precision(3);
-    Marginals marginals(graph, result);
-    std::cout << "x1 covariance:\n"
-              << marginals.marginalCovariance(1) << std::endl;
-    std::cout << "x2 covariance:\n"
-              << marginals.marginalCovariance(2) << std::endl;
-    std::cout << "x3 covariance:\n"
-              << marginals.marginalCovariance(3) << std::endl;
-    std::cout << "x4 covariance:\n"
-              << marginals.marginalCovariance(4) << std::endl;
-    std::cout << "x5 covariance:\n"
-              << marginals.marginalCovariance(5) << std::endl;
+    Marginals marginals(graph, optimizedPoses);
+
+
+    // for (Values::const_iterator iter = optimizer.values().begin(); iter != optimizer.values().end(); ++iter)
+
+    // Update the World Model with the optimized poses.
+    for (std::pair<Values::const_iterator, std::map<int, KeyFrame<int> *>::const_iterator> iter(optimizer.values().begin(), _keyFramesMap.begin());
+         iter.first != optimizer.values().end() && iter.second != _keyFramesMap.end();
+         ++iter.first, ++iter.second)
+    {
+        // First get the optimized poses from the optimizer in Euler format
+        int key = (int)iter.first->key;
+        Pose3 optimizedPose = iter.first->value.cast<Pose3>();
+        x = optimizedPose.x();
+        y = optimizedPose.y();
+        z = optimizedPose.z();
+        Rot3 r = optimizedPose.rotation();
+        Vector3 eulerR = r.xyz();
+        roll = eulerR[0];
+        pitch = eulerR[1];
+        yaw = eulerR[2];
+        
+        // In case we need the marginals
+        // std::cout << "Key-Frame " << key << " has a covariance of:\n"
+        //           << marginals.marginalCovariance(key) << std::endl;
+
+        // Then we update the World Model with the optimized poses
+        iter.second->second->SetTranslationalAndEulerAngles(x, y, z, roll, pitch, yaw);
+    }
+
 }

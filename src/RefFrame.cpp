@@ -51,6 +51,16 @@ void anloro::RefFrame::GetTranslationalAndEulerAngles(double &x, double &y, doub
     yaw = RefFrame::_yaw;
 }
 
+void anloro::RefFrame::SetTranslationalAndEulerAngles(double x, double y, double z, double roll, double pitch, double yaw)
+{
+    RefFrame::_x = x;
+    RefFrame::_y = y;
+    RefFrame::_z = z;
+    RefFrame::_roll = roll;
+    RefFrame::_pitch = pitch;
+    RefFrame::_yaw = yaw;
+}
+
 // int main()
 // {
 // //     LandMark newLM = LandMark(0, 0, 0);

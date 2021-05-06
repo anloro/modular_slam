@@ -25,6 +25,7 @@ public:
     void SetRotationalVector(double x, double y, double z);
     std::tuple<double, double, double> GetRotationalVector();
     void GetTranslationalAndEulerAngles(double &x, double &y, double &z, double &roll, double &pitch, double &yaw);
+    void SetTranslationalAndEulerAngles(double x, double y, double z, double roll, double pitch, double yaw);
 
 protected:
     double _x, _y, _z, _roll, _pitch, _yaw;
