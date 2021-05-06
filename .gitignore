@@ -1,4 +1,5 @@
 src/WorldModel
+src/WorldModelInterface
 src/build
 src/porsi
 src/.vscode

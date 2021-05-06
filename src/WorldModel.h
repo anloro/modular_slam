@@ -28,31 +28,35 @@ namespace anloro{
 
 class WorldModel
 {
-    public:
-        // Constructor
-        WorldModel();
+    private:
+        // CONSTRUCTOR (private to make it a singleton)
+        WorldModel() {};
+    
+    protected:
+        static WorldModel* worldModel_;
 
-        // Member functions
-        void AddInitialEstimate3ToGtsam(int nodeId, double x, double y, double z, double roll, double pitch, double yaw);
+    public:
+        // Singletons should not be cloneable.
+        WorldModel(WorldModel const&) = delete;
+        // Singletons should not be assignable.
+        void operator = (WorldModel const&) = delete;
+        // WorldModel(WorldModel const &) = delete;
+        // void operator=(WorldModel const &) = delete;
+
+        // MEMBER FUNCTIONS
+        // Public static function returning a reference to the singleton class:
+        static WorldModel *GetInstance();
+        // Front-end utilities
+        int InternalMapId(int id);
         // Entity creation
         void AddRefFrameEntity(RefFrame * refFrame);
         void AddKeyFrameEntity(int nodeId, KeyFrame<int> * keyFrame);
-        void AddPoseFactor(PoseFactor * poseFactor);
-        template <typename T>
-        void AddEntity(int id, T entity);
-        template <typename T>
-        T GetEntity(int id);
         // Factor creation
-        void AddPoseFactor(int fromNode, int toNode, double x, double y, double theta, double sigmaX, double sigmaY, double sigmaTheta);
-        void AddPoseFactor(int fromNode, int toNode, double x, double y, double z, double roll, double pitch, double yaw, double sigmaX, double sigmaY, double sigmaZ, double sigmaRoll, double sigmaPitch, double sigmaYaw);
-        void AddRangeOnlyFactor(int fromNode, int toNode, double range, double sigmaRange);
-        // void AddBearingOnlyFactor(int fromNode, int toNode, double bearing, double sigmaBearing);
-        int InternalMapId(int id);
-
+        void AddPoseFactor(PoseFactor * poseFactor);
         // Optimization
         void Optimize();
 
-        // Definitions for easier readability
+        // DEFINITIONS FOR EASIER READABILITY
         typedef std::map<int, RefFrame*> RefFramesMap;
         typedef std::pair<int, RefFrame*> RefFramePair;
         typedef std::map<int, KeyFrame<int>*> KeyFramesMap;
@@ -61,8 +65,7 @@ class WorldModel
         typedef std::pair<int, PoseFactor*> PoseFactorPair;
 
     protected :
-        // Map 
-        std::map<int, boost::any> _myMap;
+        // MAPS DATA 
         RefFramesMap _refFramesMap;
         KeyFramesMap _keyFramesMap;
         PoseFactorsMap _poseFactorsMap;
@@ -72,26 +75,8 @@ class WorldModel
         std::map<int, int> _rtabToModular;
         // Map this framework id into Rtab-Map id
         std::map<int, int> _modularToRtab;
-        // GTSAM'S INTERFACE DATA
-        gtsam::NonlinearFactorGraph _graph;
-        gtsam::Values _initialEstimate;
-        gtsam::Values _result;
+
 };
 
-template <typename T>
-void WorldModel::AddEntity(int id, T entity)
-{
-    int internalId;
-    internalId = InternalMapId(id);
-    // Add the entity to the global map
-    _myMap.insert(std::make_pair(internalId, entity));
-    std::cout << "The id " << id << " maps into internal id " << internalId << std::endl;
-}
-
-template <typename T>
-T WorldModel::GetEntity(int id)
-{
-    return boost::any_cast<T>(_myMap[id]);
-}
 
 } // namespace anloro
