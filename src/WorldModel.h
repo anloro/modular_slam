@@ -55,6 +55,7 @@ class WorldModel
         void AddPoseFactor(PoseFactor * poseFactor);
         // Optimization
         void Optimize();
+        void SavePosesRaw();
 
         // DEFINITIONS FOR EASIER READABILITY
         typedef std::map<int, RefFrame*> RefFramesMap;

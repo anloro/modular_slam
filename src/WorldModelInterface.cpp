@@ -61,6 +61,11 @@ void anloro::WorldModelInterface::Optimize()
     _worldModel->Optimize();
 }
 
+void anloro::WorldModelInterface::SavePosesRaw()
+{
+    _worldModel->SavePosesRaw();
+}
+
 int main()
 {
     // --------------------------------------------------------------
@@ -84,43 +89,96 @@ int main()
     // Add the global reference frame
     interface.AddRefFrame(0, 0, 0, 0, 0, 0);
 
-    // Add the Node 0
-    interface.AddKeyFrame(0, 0, 0, 0, 0, 0, 0);
+    // // Add the Node 0
+    // interface.AddKeyFrame(0, 0, 0, 0, 0, 0, 0);
 
-    // Add the Node 1
-    interface.AddKeyFrame(1, 2, 0, 0, 0, 0, 0);
-    // Add Factor between Node 0 and Node 1
-    interface.AddPoseConstraint(0, 1, 2, 0, 0, 0, 0, 0, 0.2, 0.2, 0, 0.1, 0.1, 0.1);
+    // // Add the Node 1
+    // interface.AddKeyFrame(1, 2, 0, 0, 0, 0, -M_PI_2);
+    // // Add Factor between Node 0 and Node 1
+    // interface.AddPoseConstraint(0, 1, 2, 0, 0, 0, 0, -M_PI_2, 0.2, 0.2, 0, 0.1, 0.1, 0.1);
 
-    // Add the Node 2
-    interface.AddKeyFrame(2, 2, -1, 0, 0, 0, 0);
-    // Add Factor between Node 1 and Node 2
-    interface.AddPoseConstraint(1, 2, 0, -1, 0, 0, 0, 0, 0.2, 0.2, 0, 0.1, 0.1, 0.1);
+    // // Add the Node 2
+    // interface.AddKeyFrame(2, 2, -1, 0, 0, 0, 0);
+    // // Add Factor between Node 1 and Node 2
+    // interface.AddPoseConstraint(1, 2, 1, 0, 0, 0, 0, M_PI_2, 0.2, 0.2, 0, 0.1, 0.1, 0.1);
 
-    // Add the Node 3
-    interface.AddKeyFrame(3, 4, -1, 0, 0, 0, 0);
-    // Add Factor between Node 2 and Node 3
-    interface.AddPoseConstraint(2, 3, 2, 0, 0, 0, 0, 0, 0.2, 0.2, 0, 0.1, 0.1, 0.1);
+    // // Add the Node 3
+    // interface.AddKeyFrame(3, 4, -1, 0, 0, 0, 0);
+    // // Add Factor between Node 2 and Node 3
+    // interface.AddPoseConstraint(2, 3, 2, 0, 0, 0, 0, 0, 0.2, 0.2, 0, 0.1, 0.1, 0.1);
 
-    // Add the Node 4
-    interface.AddKeyFrame(4, 7, -2, 0, 0, 0, 0);
-    // Add Factor between Node 3 and Node 4
-    interface.AddPoseConstraint(3, 4, 3, -1, 0, 0, 0, 0, 0.2, 0.2, 0, 0.1, 0.1, 0.1);
+    // // Add the Node 4
+    // interface.AddKeyFrame(4, 8, -1, 0, 0, 0, -M_PI_2);
+    // // Add Factor between Node 3 and Node 4
+    // interface.AddPoseConstraint(3, 4, 3, 0, 0, 0, 0, -M_PI_2, 0.2, 0.2, 0, 0.1, 0.1, 0.1);
 
-    // Add the Node 5
-    interface.AddKeyFrame(5, 7, 0, 0, 0, 0, 0);
-    // Add Factor between Node 4 and Node 5
-    interface.AddPoseConstraint(4, 5, 0, 2, 0, 0, 0, 0, 0.2, 0.2, 0, 0.1, 0.1, 0.1);
+    // // Add the Node 5
+    // interface.AddKeyFrame(5, 8, 0, 0, 0, 0, -M_PI_2 - M_PI_4);
+    // // Add Factor between Node 4 and Node 5
+    // interface.AddPoseConstraint(4, 5, 2, 0, 0, 0, 0, -M_PI_4, 0.2, 0.2, 0, 0.1, 0.1, 0.1);
 
-    // Add the Node 6
-    interface.AddKeyFrame(6, 5, 3, 0, 0, 0, 0);
-    // Add Factor between Node 5 and Node 6
-    interface.AddPoseConstraint(5, 6, -2, -3, 0, 0, 0, 0, 0.2, 0.2, 0, 0.1, 0.1, 0.1);
+    // // Add the Node 6
+    // interface.AddKeyFrame(6, 5, 3, 0, 0, 0, M_PI_2 + M_PI_4);
+    // // Add Factor between Node 5 and Node 6
+    // interface.AddPoseConstraint(5, 6, 3, 3, 0, 0, 0, -M_PI_2, 0.2, 0.2, 0, 0.1, 0.1, 0.1);
 
-    // Add loop closure constraint
-    interface.AddPoseConstraint(6, 1, -3, -3, 0, 0, 0, 0, 0.2, 0.2, 0, 0.1, 0.1, 0.1);
+    // // Add loop closure constraint
+    // interface.AddPoseConstraint(6, 1, 3, 3, 0, 0, 0, -M_PI_4, 0.2, 0.2, 0, 0.1, 0.1, 0.1);
+
+    // // Add the Node 0
+    // interface.AddKeyFrame(0, 0, 0, 0, 0, 0, 0);
+
+    // // Add the Node 1
+    // interface.AddKeyFrame(1, 2, 0, 0, 0, 0, 0);
+    // // Add Factor between Node 0 and Node 1
+    // interface.AddPoseConstraint(0, 1, 2, 0, 0, 0, 0, 0, 0.2, 0.2, 0, 0.1, 0.1, 0.1);
+
+    // // Add the Node 2
+    // interface.AddKeyFrame(2, 2, -1, 0, 0, 0, 0);
+    // // Add Factor between Node 1 and Node 2
+    // interface.AddPoseConstraint(1, 2, 0, -1, 0, 0, 0, 0, 0.2, 0.2, 0, 0.1, 0.1, 0.1);
+
+    // // Add the Node 3
+    // interface.AddKeyFrame(3, 4, -1, 0, 0, 0, 0);
+    // // Add Factor between Node 2 and Node 3
+    // interface.AddPoseConstraint(2, 3, 2, 0, 0, 0, 0, 0, 0.2, 0.2, 0, 0.1, 0.1, 0.1);
+
+    // // Add the Node 4
+    // interface.AddKeyFrame(4, 7, -2, 0, 0, 0, 0);
+    // // Add Factor between Node 3 and Node 4
+    // interface.AddPoseConstraint(3, 4, 3, -1, 0, 0, 0, 0, 0.2, 0.2, 0, 0.1, 0.1, 0.1);
+
+    // // Add the Node 5
+    // interface.AddKeyFrame(5, 7, 0, 0, 0, 0, 0);
+    // // Add Factor between Node 4 and Node 5
+    // interface.AddPoseConstraint(4, 5, 0, 2, 0, 0, 0, 0, 0.2, 0.2, 0, 0.1, 0.1, 0.1);
+
+    // // Add the Node 6
+    // interface.AddKeyFrame(6, 5, 3, 0, 0, 0, 0);
+    // // Add Factor between Node 5 and Node 6
+    // interface.AddPoseConstraint(5, 6, -2, -3, 0, 0, 0, 0, 0.2, 0.2, 0, 0.1, 0.1, 0.1);
+
+    // // Add loop closure constraint
+    // interface.AddPoseConstraint(6, 1, -3, -3, 0, 0, 0, 0, 0.2, 0.2, 0, 0.1, 0.1, 0.1);
+
+    interface.AddPoseConstraint(1, 2, 2, 0, 0, 0, 0, 0, 0.2, 0.2, 0, 0.1, 0.1, 0.1);
+    interface.AddPoseConstraint(2, 3, 2, 0, 0, 0, 0, M_PI_2, 0.2, 0.2, 0, 0.1, 0.1, 0.1);
+    interface.AddPoseConstraint(3, 4, 2, 0, 0, 0, 0, M_PI_2, 0.2, 0.2, 0, 0.1, 0.1, 0.1);
+    interface.AddPoseConstraint(4, 5, 2, 0, 0, 0, 0, M_PI_2, 0.2, 0.2, 0, 0.1, 0.1, 0.1);
+    // loop closure
+    interface.AddPoseConstraint(5, 2, 2, 0, 0, 0, 0, M_PI_2, 0.2, 0.2, 0, 0.1, 0.1, 0.1);
+
+    // 3. Create the data structure to hold the initialEstimate estimate to the solution
+    // For illustrative purposes, these have been deliberately set to incorrect values
+    interface.AddKeyFrame(1, 0.5, 0.0, 0, 0, 0, 0.2);
+    interface.AddKeyFrame(2, 2.3, 0.1, 0, 0, 0, -0.2);
+    interface.AddKeyFrame(3, 4.1, 0.1, 0, 0, 0, M_PI_2);
+    interface.AddKeyFrame(4, 4.0, 2.0, 0, 0, 0, M_PI);
+    interface.AddKeyFrame(5, 2.1, 2.1, 0, 0, 0, -M_PI_2);
 
     interface.Optimize();
+
+    interface.SavePosesRaw();
 
     return 0;
 }

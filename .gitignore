@@ -3,6 +3,7 @@ src/WorldModelInterface
 src/build
 src/porsi
 src/.vscode
+src/examples
 g2o
 datasets
 gtsam-4.0.0

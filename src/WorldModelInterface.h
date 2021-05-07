@@ -25,10 +25,10 @@ class WorldModelInterface
         void AddPoseConstraint(int fromNode, int toNode, double x, double y, double z, double roll, double pitch, double yaw,
                            double sigmaX, double sigmaY, double sigmaZ, double sigmaRoll, double sigmaPitch, double sigmaYaw);
         void Optimize();
-
-    protected:
-        WorldModel* _worldModel;
-
+        void SavePosesRaw(); 
+    
+    protected: 
+        WorldModel *_worldModel;
 };
 
 

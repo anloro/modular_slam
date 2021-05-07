@@ -8,6 +8,7 @@
 // my includes
 #include "WorldModel.h"
 
+#include <Eigen/Geometry>
 // includes to create the custom graph
 // includes to the gtsam graph
 #include <gtsam/sam/RangeFactor.h>
@@ -23,6 +24,7 @@
 
 #include <iostream>
 #include <chrono>
+#include <fstream>
 
 using namespace gtsam;
 using namespace anloro;
@@ -117,6 +119,7 @@ void anloro::WorldModel::Optimize()
     graph.addPrior(initId, priorPose, priorNoise);
 
     // Add the Pose3 factors
+    Eigen::Matrix3d n;
     int idFrom, idTo, NodeId;
     double x, y, z, roll, pitch, yaw, sigmaX, sigmaY, sigmaZ, sigmaRoll, sigmaPitch, sigmaYaw;
     for (std::map<int, PoseFactor *>::const_iterator iter = _poseFactorsMap.begin(); iter != _poseFactorsMap.end(); ++iter)
@@ -126,7 +129,11 @@ void anloro::WorldModel::Optimize()
         iter->second->GetTranslationalAndEulerAngles(x, y, z, roll, pitch, yaw);
         iter->second->GetEulerVariances(sigmaX, sigmaY, sigmaZ, sigmaRoll, sigmaPitch, sigmaYaw);
         auto noiseModel = noiseModel::Diagonal::Sigmas((Vector(6) << sigmaX, sigmaY, sigmaZ, sigmaRoll, sigmaPitch, sigmaYaw).finished());
-        Rot3 newR = Rot3().Yaw(yaw).Pitch(pitch).Roll(roll);
+        n = Eigen::AngleAxisd(roll, Eigen::Vector3d::UnitX()) 
+          * Eigen::AngleAxisd(pitch, Eigen::Vector3d::UnitY()) 
+          * Eigen::AngleAxisd(yaw, Eigen::Vector3d::UnitZ());
+        Rot3 newR = Rot3(n);
+        // Rot3 newR = Rot3().Yaw(yaw).Pitch(pitch).Roll(roll);
         Point3 newP = Point3(x, y, z);
         Pose3 newMean = Pose3(newR, newP);
         graph.emplace_shared<BetweenFactor<Pose3>>(idFrom, idTo, newMean, noiseModel);
@@ -137,17 +144,28 @@ void anloro::WorldModel::Optimize()
     {
         NodeId = iter->first;
         iter->second->GetTranslationalAndEulerAngles(x, y, z, roll, pitch, yaw);
-        Rot3 newR = Rot3().Yaw(yaw).Pitch(pitch).Roll(roll);
+        n = Eigen::AngleAxisd(roll, Eigen::Vector3d::UnitX()) 
+          * Eigen::AngleAxisd(pitch, Eigen::Vector3d::UnitY()) 
+          * Eigen::AngleAxisd(yaw, Eigen::Vector3d::UnitZ());
+        Rot3 newR = Rot3(n);
         Point3 newP = Point3(x, y, z);
         Pose3 newPose = Pose3(newR, newP);
         initialEstimate.insert(NodeId, newPose);
     }
 
-    graph.print();
-
+    graph.print("This is the graph:\n");
+    initialEstimate.print("This is the initial estimate:\n");
     GaussNewtonParams parameters;
+    // Stop iterating once the change in error between steps is less than this value
+    parameters.relativeErrorTol = 1e-5;
+    // Do not perform more than N iteration steps
+    parameters.maxIterations = 100;
     GaussNewtonOptimizer optimizer(graph, initialEstimate, parameters);
+    double err0 = optimizer.error();
+    std::cout << "The error is: " << err0 << std::endl;
     optimizedPoses = optimizer.optimize();
+    double err = optimizer.error();
+    std::cout << "The error is: " << err << std::endl;
 
     // This is for testing
     optimizedPoses.print("Optimized poses:\n");
@@ -183,4 +201,25 @@ void anloro::WorldModel::Optimize()
         iter.second->second->SetTranslationalAndEulerAngles(x, y, z, roll, pitch, yaw);
     }
 
+}
+
+void anloro::WorldModel::SavePosesRaw()
+{
+    // Create and open a text file
+    std::ofstream outputFile("rawposes.txt");
+
+    int nodeId;
+    double x, y, z, roll, pitch, yaw;
+
+    for (std::map<int, KeyFrame<int> *>::const_iterator iter = _keyFramesMap.begin(); iter != _keyFramesMap.end(); ++iter)
+    {
+        nodeId = iter->first;
+        iter->second->GetTranslationalAndEulerAngles(x, y, z, roll, pitch, yaw);
+        
+        // Write to the file
+        outputFile << nodeId << " " << x << " " << y << " " << z << " " << roll << " " << pitch << " " << yaw << std::endl;
+    }
+
+    // Close the file
+    outputFile.close();
 }
