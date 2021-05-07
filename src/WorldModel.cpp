@@ -220,6 +220,8 @@ void anloro::WorldModel::SavePosesRaw()
         outputFile << nodeId << " " << x << " " << y << " " << z << " " << roll << " " << pitch << " " << yaw << std::endl;
     }
 
+    std::cout << "Raw poses saved as rawposes.txt" << std::endl;
+
     // Close the file
     outputFile.close();
 }

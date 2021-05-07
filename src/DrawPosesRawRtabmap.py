@@ -9,8 +9,8 @@ import sys
 
 def main():
     
-    # rawPoses = 'rawposes.txt' 
     rawPoses = sys.argv[1]
+    # rawPoses = 'rawposes.txt' 
     
     fig, ax = plt.subplots() # note we must use plt.subplots, not plt.subplot
 
@@ -24,6 +24,7 @@ def main():
     with open(rawPoses, 'r') as reader:
         # Read and print the entire file line by line
         line = reader.readline()
+        line = reader.readline() # we don't want the first line
         while line != '':  # The EOF char is an empty string
             countSpaces = 0
             x = ""
@@ -36,8 +37,9 @@ def main():
                     x += char
                 if countSpaces == 2: 
                     y += char
-                if countSpaces == 6: 
-                    theta += char
+                if countSpaces == 5: 
+                    theta = 0
+                    # theta += char
             
             fx = float(x)
             fy = float(y)
