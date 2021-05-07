@@ -39,7 +39,7 @@ KeyFrame<Ts...>::KeyFrame(double x, double y, double z, double roll, double pitc
     _roll = roll;
     _pitch = pitch;
     _yaw = yaw;
-    std::tuple<Ts...> rawData = std::tuple(data...);
+    std::tuple<Ts...> rawData = std::tuple<Ts...>(data...);
     _rawData = rawData;
 }
 
