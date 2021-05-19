@@ -11,4 +11,4 @@ opencv_build
 rtabmap
 catkin_ws
 cvsba-1.0.0
-SFGraphing
+# SFGraphing
