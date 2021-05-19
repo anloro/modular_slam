@@ -8,6 +8,8 @@
 // my includes
 #include "WorldModel.h"
 
+#include "SFPlot.h"
+
 #include <Eigen/Geometry>
 // includes to create the custom graph
 // includes to the gtsam graph
@@ -30,6 +32,11 @@ using namespace gtsam;
 using namespace anloro;
 
 WorldModel* WorldModel::worldModel_= nullptr;
+
+anloro::WorldModel::WorldModel()
+{
+    _plotterThread = new std::thread(&WorldModelPlotter::Spin, &_plotter);
+}
 
 WorldModel * WorldModel::GetInstance()
 {
@@ -86,6 +93,8 @@ void anloro::WorldModel::AddRefFrameEntity(RefFrame *refFrame)
 void anloro::WorldModel::AddKeyFrameEntity(int id, KeyFrame<int> *keyFrame)
 {
     _keyFramesMap.insert(KeyFramePair(id, keyFrame));
+    // Add to the render window
+    InsertKeyFrameToPlot(keyFrame);
 }
 
 // ---------------------------------------------------------
@@ -210,9 +219,10 @@ void anloro::WorldModel::SavePosesRaw()
 
     int nodeId;
     double x, y, z, roll, pitch, yaw;
-
+    // Iterate over the KeyFrame's map
     for (std::map<int, KeyFrame<int> *>::const_iterator iter = _keyFramesMap.begin(); iter != _keyFramesMap.end(); ++iter)
-    {
+    {   
+        // Get the information of each node
         nodeId = iter->first;
         iter->second->GetTranslationalAndEulerAngles(x, y, z, roll, pitch, yaw);
         
@@ -224,4 +234,15 @@ void anloro::WorldModel::SavePosesRaw()
 
     // Close the file
     outputFile.close();
+}
+
+void anloro::WorldModel::InsertKeyFrameToPlot(KeyFrame<int> *keyFrame)
+{
+    double x, y, z, roll, pitch, yaw;
+
+    std::vector<float> *xAxis = _plotter.GetxAxis();
+    std::vector<float> *yAxis = _plotter.GetyAxis();
+    keyFrame->GetTranslationalAndEulerAngles(x, y, z, roll, pitch, yaw);
+    xAxis->push_back(x);
+    yAxis->push_back(y);
 }

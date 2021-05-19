@@ -74,6 +74,9 @@ def main():
     # ax = fig.gca()
     ax.set_xlim((min(minXLim, minYLim) - 2*radius, max(maxXLim,maxYLim) + 2*radius))
     ax.set_ylim((min(minXLim, minYLim) - 2*radius, max(maxXLim,maxYLim) + 2*radius))
+    plt.xlabel("X (m)")
+    plt.ylabel("Y (m)")
+    plt.title('RTAB-Map result')
 
     # fig.savefig('rawposes.png')
     fig.savefig(rawPoses[:-4]+'.png')

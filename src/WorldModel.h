@@ -11,6 +11,10 @@
 #include "KeyFrame.h"
 #include "PoseFactor.h"
 
+#include "WorldModelPlotter.h"
+#include <SFML/Graphics.hpp>
+#include <thread>
+
 #include <boost/any.hpp>
 
 // includes to gtsam 
@@ -30,8 +34,8 @@ class WorldModel
 {
     private:
         // CONSTRUCTOR (private to make it a singleton)
-        WorldModel() {};
-    
+        WorldModel();
+
     protected:
         static WorldModel* worldModel_;
 
@@ -56,6 +60,7 @@ class WorldModel
         // Optimization
         void Optimize();
         void SavePosesRaw();
+        void InsertKeyFrameToPlot(KeyFrame<int> *keyFrame);
 
         // DEFINITIONS FOR EASIER READABILITY
         typedef std::map<int, RefFrame*> RefFramesMap;
@@ -77,6 +82,9 @@ class WorldModel
         // Map this framework id into Rtab-Map id
         std::map<int, int> _modularToRtab;
 
+        // Plotting thread
+        std::thread * _plotterThread;
+        WorldModelPlotter _plotter;
 };
 
 
