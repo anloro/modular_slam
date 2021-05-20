@@ -210,6 +210,7 @@ void anloro::WorldModel::Optimize()
         iter.second->second->SetTranslationalAndEulerAngles(x, y, z, roll, pitch, yaw);
     }
 
+    UpdateCompletePlot();
 }
 
 void anloro::WorldModel::SavePosesRaw()
@@ -245,4 +246,22 @@ void anloro::WorldModel::InsertKeyFrameToPlot(KeyFrame<int> *keyFrame)
     keyFrame->GetTranslationalAndEulerAngles(x, y, z, roll, pitch, yaw);
     xAxis->push_back(x);
     yAxis->push_back(y);
+}
+
+void anloro::WorldModel::UpdateCompletePlot()
+{
+    double x, y, z, roll, pitch, yaw;
+
+    std::vector<float> *newxAxis = new std::vector<float>{};
+    std::vector<float> *newyAxis = new std::vector<float>{};
+    // Iterate over the KeyFrame's map
+    for (std::map<int, KeyFrame<int> *>::const_iterator iter = _keyFramesMap.begin(); iter != _keyFramesMap.end(); ++iter)
+    {
+        // Get the information of each node
+        iter->second->GetTranslationalAndEulerAngles(x, y, z, roll, pitch, yaw);
+        newxAxis->push_back(x);
+        newyAxis->push_back(y);
+    }
+
+    _plotter.SetAxis(newxAxis, newyAxis);    
 }

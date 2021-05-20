@@ -61,6 +61,7 @@ class WorldModel
         void Optimize();
         void SavePosesRaw();
         void InsertKeyFrameToPlot(KeyFrame<int> *keyFrame);
+        void UpdateCompletePlot();
 
         // DEFINITIONS FOR EASIER READABILITY
         typedef std::map<int, RefFrame*> RefFramesMap;
