@@ -5,16 +5,17 @@
  * @date   18/05/2021
  */
 #include "WorldModelPlotter.h"
-#include "SFPlot.h"
 #include <iostream>
 #include <thread>
+
+#include "SFPlot.h"
 
 anloro::WorldModelPlotter::WorldModelPlotter()
 {
     sf::ContextSettings settings;
     settings.antialiasingLevel = 4;
 
-    _window = new sf::RenderWindow(sf::VideoMode(800, 800), "SF-Graphing", sf::Style::Default, settings);
+    _window = new sf::RenderWindow(sf::VideoMode(800, 800), "Trajectory", sf::Style::Default, settings);
     _font.loadFromFile("/home/angel/Documents/02_master_thesis/project/lato/Lato-Regular.ttf");
 
     _xAxis = new std::vector<float>{};
@@ -53,11 +54,8 @@ void anloro::WorldModelPlotter::Spin()
 
         // Update the plot
         if (_xAxis->size() > 2 && _yAxis->size() > 2){
-            csrc::PlotDataSet set(*_xAxis, *_yAxis, sf::Color::White, "Trajectory", csrc::PlottingType::LINE);
             csrc::SFPlot plot(sf::Vector2f(0, 0), sf::Vector2f(800, 800), 50, _font, "X Axis", "Y Axis");
-            plot.AddDataSet(set);
 
-            
             float xmin = *min_element(_xAxis->begin(), _xAxis->end());
             float xmax = *max_element(_xAxis->begin(), _xAxis->end());
             float ymin = *min_element(_yAxis->begin(), _yAxis->end());
@@ -68,7 +66,32 @@ void anloro::WorldModelPlotter::Spin()
             float amax = std::max(xmax, ymax);
             float amin = std::min(xmin, ymin);
 
-            plot.SetupAxes(amin, amax, amin, amax, xstep, ystep, sf::Color::White);
+            std::vector<float> x = {};
+            for (float i : *_xAxis){
+                x.push_back(i - xmin);
+            }
+            std::vector<float> y = {};
+            for (float i : *_yAxis)
+            {
+                y.push_back(i - ymin);
+            }
+
+            // xmin = *min_element(x.begin(), x.end());
+            // xmax = *max_element(x.begin(), x.end());
+            // ymin = *min_element(y.begin(), y.end());
+            // ymax = *max_element(y.begin(), y.end());
+            // xstep = (xmax - xmin) / 10;
+            // ystep = (ymax - ymin) / 10;
+
+            // amax = std::max(xmax, ymax);
+            // amin = std::min(xmin, ymin);
+
+            // csrc::PlotDataSet set(*_xAxis, *_yAxis, sf::Color::White, "Trajectory", csrc::PlottingType::LINE);
+            csrc::PlotDataSet set(x, y, sf::Color::White, "Trajectory", csrc::PlottingType::LINE);
+            plot.AddDataSet(set);
+
+            // plot.SetupAxes(amin, amax, amin, amax, xstep, ystep, sf::Color::White);
+            plot.SetupAxes();
             plot.GenerateVertices();
 
             _window->draw(plot);
