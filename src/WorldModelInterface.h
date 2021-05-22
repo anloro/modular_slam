@@ -9,7 +9,7 @@
 
 // my includes
 #include "WorldModel.h"
-
+#include <Eigen/Geometry>
 
 namespace anloro{
 
@@ -24,6 +24,10 @@ class WorldModelInterface
         void AddKeyFrame(int id, double x, double y, double z, double roll, double pitch, double yaw);
         void AddPoseConstraint(int fromNode, int toNode, double x, double y, double z, double roll, double pitch, double yaw,
                            double sigmaX, double sigmaY, double sigmaZ, double sigmaRoll, double sigmaPitch, double sigmaYaw);
+        void AddPoseConstraint(int fromNode, int toNode, 
+                                Eigen::Affine3f transform, Eigen::Matrix<double, 6, 6> noiseModel);
+        // from pcl library
+        void getTranslationAndEulerAngles(const Eigen::Affine3f &t, double &x, double &y, double &z, double &roll, double &pitch, double &yaw);
         void Optimize();
         void SavePosesRaw(); 
     
