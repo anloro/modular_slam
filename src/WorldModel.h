@@ -52,6 +52,7 @@ class WorldModel
         static WorldModel *GetInstance();
         // Front-end utilities
         int InternalMapId(int id);
+        int GetIdFromInternalMap(int id);
         // Entity creation
         void AddRefFrameEntity(RefFrame * refFrame);
         void AddKeyFrameEntity(int nodeId, KeyFrame<int> * keyFrame);
@@ -59,6 +60,7 @@ class WorldModel
         void AddPoseFactor(PoseFactor * poseFactor);
         // Optimization
         void Optimize();
+        std::map<int, Eigen::Affine3f> GetOptimizedPoses();
         void SavePosesRaw();
         void InsertKeyFrameToPlot(KeyFrame<int> *keyFrame);
         void UpdateCompletePlot();

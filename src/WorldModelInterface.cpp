@@ -77,6 +77,14 @@ void anloro::WorldModelInterface::AddPoseConstraint(int fromNode, int toNode,
     _worldModel->AddPoseFactor(poseFactor);
 }
 
+std::map<int, Eigen::Affine3f> anloro::WorldModelInterface::GetOptimizedPoses()
+{
+    std::map<int, Eigen::Affine3f> optimizedPoses;
+    optimizedPoses = _worldModel->GetOptimizedPoses();
+    
+    return optimizedPoses;
+}
+
 void anloro::WorldModelInterface::getTranslationAndEulerAngles(const Eigen::Affine3f &t, double &x, double &y, double &z, double &roll, double &pitch, double &yaw)
 {
     x = t(0, 3);

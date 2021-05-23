@@ -28,6 +28,7 @@ class WorldModelInterface
                                 Eigen::Affine3f transform, Eigen::Matrix<double, 6, 6> noiseModel);
         // from pcl library
         void getTranslationAndEulerAngles(const Eigen::Affine3f &t, double &x, double &y, double &z, double &roll, double &pitch, double &yaw);
+        std::map<int, Eigen::Affine3f> GetOptimizedPoses();
         void Optimize();
         void SavePosesRaw(); 
     

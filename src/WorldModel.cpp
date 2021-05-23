@@ -77,6 +77,21 @@ int anloro::WorldModel::InternalMapId(int id)
     }
 }
 
+// Recover original ID from internal IDs
+int anloro::WorldModel::GetIdFromInternalMap(int id)
+{
+    // Check for the ID
+    if (_modularToRtab.count(id) == 0)
+    {
+        // ID not found!
+    }
+    else
+    {
+        // ID found
+        return _modularToRtab[id];
+    }
+}
+
 // ---------------------------------------------------------
 // ------------- Entity creation definitions ---------------
 // ---------------------------------------------------------
@@ -211,6 +226,38 @@ void anloro::WorldModel::Optimize()
     }
 
     UpdateCompletePlot();
+}
+
+// Return the optimized poses map
+std::map<int, Eigen::Affine3f> anloro::WorldModel::GetOptimizedPoses()
+{
+    int nodeId, rtabmapId;
+    double x, y, z, roll, pitch, yaw;
+    std::map<int, Eigen::Affine3f> optimizedPoses;
+    typedef std::pair<int, Eigen::Affine3f> optimizedPose;
+
+    // Iterate over the KeyFrame's map
+    for (std::map<int, KeyFrame<int> *>::const_iterator iter = _keyFramesMap.begin(); iter != _keyFramesMap.end(); ++iter)
+    {
+        // Get the information of each node
+        nodeId = iter->first;
+        iter->second->GetTranslationalAndEulerAngles(x, y, z, roll, pitch, yaw);
+        
+        rtabmapId = GetIdFromInternalMap(nodeId);
+
+        Eigen::Matrix3d n;
+        n = Eigen::AngleAxisd(roll, Eigen::Vector3d::UnitX()) * Eigen::AngleAxisd(pitch, Eigen::Vector3d::UnitY()) * Eigen::AngleAxisd(yaw, Eigen::Vector3d::UnitZ());
+        Eigen::Matrix4f m;
+        m << n(0, 0), n(0, 1), n(0, 2), x,
+            n(1, 0), n(1, 1), n(1, 2), y,
+            n(2, 0), n(2, 1), n(2, 2), z,
+            0, 0, 0, 1;
+        Eigen::Affine3f transform = Eigen::Affine3f(m);
+
+        optimizedPoses.insert(optimizedPose(rtabmapId, transform));
+    }
+
+    return optimizedPoses;
 }
 
 void anloro::WorldModel::SavePosesRaw()
