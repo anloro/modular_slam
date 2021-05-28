@@ -23,6 +23,7 @@
 #include <gtsam/nonlinear/NonlinearFactorGraph.h>
 #include <gtsam/nonlinear/Values.h>
 #include <gtsam/nonlinear/GaussNewtonOptimizer.h>
+#include <gtsam/nonlinear/LevenbergMarquardtOptimizer.h>
 
 #include <iostream>
 #include <chrono>
@@ -56,6 +57,8 @@ class WorldModel
         // Entity creation
         void AddRefFrameEntity(RefFrame * refFrame);
         void AddKeyFrameEntity(int nodeId, KeyFrame<int> * keyFrame);
+        void DeleteKeyFrameEntity(int id);
+        void UnregisterKeyFrame(int id);
         // Factor creation
         void AddPoseFactor(PoseFactor * poseFactor);
         // Optimization

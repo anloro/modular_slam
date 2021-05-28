@@ -10,15 +10,23 @@
 
 using namespace anloro;
 
-anloro::WorldModelInterface::WorldModelInterface()
+
+anloro::WorldModelInterface::WorldModelInterface(std::string id)
 {
     // Get the instance from the World Model
     _worldModel = WorldModel::GetInstance();
+    _uniqueID = id;
 }
 
 // ---------------------------------------------------------
 // ------------ Front-end interface functions --------------
 // ---------------------------------------------------------
+
+// Get the interface's unique ID
+std::string anloro::WorldModelInterface::GetInterfaceId(){
+
+    return _uniqueID;
+}
 
 // Add a coordinate reference frame to the World model
 void anloro::WorldModelInterface::AddRefFrame(double x, double y, double z, double roll, double pitch, double yaw)

@@ -10,6 +10,7 @@
 // my includes
 #include "WorldModel.h"
 #include <Eigen/Geometry>
+#include <string>
 
 namespace anloro{
 
@@ -17,9 +18,11 @@ class WorldModelInterface
 {
     public:
         // CONSTRUCTOR
-        WorldModelInterface();
+        WorldModelInterface() : WorldModelInterface("GenericId") {};
+        WorldModelInterface(std::string id);
 
         // MEMBER FUNCTIONS
+        std::string GetInterfaceId();
         void AddRefFrame(double x, double y, double z, double roll, double pitch, double yaw);
         void AddKeyFrame(int id, double x, double y, double z, double roll, double pitch, double yaw);
         void AddPoseConstraint(int fromNode, int toNode, double x, double y, double z, double roll, double pitch, double yaw,
@@ -34,6 +37,7 @@ class WorldModelInterface
     
     protected: 
         WorldModel *_worldModel;
+        std::string _uniqueID;
 };
 
 

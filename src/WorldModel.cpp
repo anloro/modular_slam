@@ -28,17 +28,20 @@
 #include <chrono>
 #include <fstream>
 
+#include <boost/pointer_cast.hpp>
+#include <boost/shared_ptr.hpp>
+
 using namespace gtsam;
 using namespace anloro;
 
-WorldModel* WorldModel::worldModel_= nullptr;
+WorldModel *WorldModel::worldModel_ = nullptr;
 
 anloro::WorldModel::WorldModel()
 {
     _plotterThread = new std::thread(&WorldModelPlotter::Spin, &_plotter);
 }
 
-WorldModel * WorldModel::GetInstance()
+WorldModel *WorldModel::GetInstance()
 {
     if (worldModel_ == nullptr)
     {
@@ -153,9 +156,7 @@ void anloro::WorldModel::Optimize()
         iter->second->GetTranslationalAndEulerAngles(x, y, z, roll, pitch, yaw);
         iter->second->GetEulerVariances(sigmaX, sigmaY, sigmaZ, sigmaRoll, sigmaPitch, sigmaYaw);
         auto noiseModel = noiseModel::Diagonal::Sigmas((Vector(6) << sigmaX, sigmaY, sigmaZ, sigmaRoll, sigmaPitch, sigmaYaw).finished());
-        n = Eigen::AngleAxisd(roll, Eigen::Vector3d::UnitX()) 
-          * Eigen::AngleAxisd(pitch, Eigen::Vector3d::UnitY()) 
-          * Eigen::AngleAxisd(yaw, Eigen::Vector3d::UnitZ());
+        n = Eigen::AngleAxisd(roll, Eigen::Vector3d::UnitX()) * Eigen::AngleAxisd(pitch, Eigen::Vector3d::UnitY()) * Eigen::AngleAxisd(yaw, Eigen::Vector3d::UnitZ());
         Rot3 newR = Rot3(n);
         // Rot3 newR = Rot3().Yaw(yaw).Pitch(pitch).Roll(roll);
         Point3 newP = Point3(x, y, z);
@@ -168,17 +169,15 @@ void anloro::WorldModel::Optimize()
     {
         NodeId = iter->first;
         iter->second->GetTranslationalAndEulerAngles(x, y, z, roll, pitch, yaw);
-        n = Eigen::AngleAxisd(roll, Eigen::Vector3d::UnitX()) 
-          * Eigen::AngleAxisd(pitch, Eigen::Vector3d::UnitY()) 
-          * Eigen::AngleAxisd(yaw, Eigen::Vector3d::UnitZ());
+        n = Eigen::AngleAxisd(roll, Eigen::Vector3d::UnitX()) * Eigen::AngleAxisd(pitch, Eigen::Vector3d::UnitY()) * Eigen::AngleAxisd(yaw, Eigen::Vector3d::UnitZ());
         Rot3 newR = Rot3(n);
         Point3 newP = Point3(x, y, z);
         Pose3 newPose = Pose3(newR, newP);
         initialEstimate.insert(NodeId, newPose);
     }
 
-    graph.print("This is the graph:\n");
-    initialEstimate.print("This is the initial estimate:\n");
+    // graph.print("This is the graph:\n");
+    // initialEstimate.print("This is the initial estimate:\n");
     GaussNewtonParams parameters;
     // Stop iterating once the change in error between steps is less than this value
     parameters.relativeErrorTol = 1e-5;
@@ -192,11 +191,10 @@ void anloro::WorldModel::Optimize()
     std::cout << "The error is: " << err << std::endl;
 
     // This is for testing
-    optimizedPoses.print("Optimized poses:\n");
+    // optimizedPoses.print("Optimized poses:\n");
     // Calculate and print marginal covariances for all variables
     std::cout.precision(3);
     Marginals marginals(graph, optimizedPoses);
-
 
     // for (Values::const_iterator iter = optimizer.values().begin(); iter != optimizer.values().end(); ++iter)
 
@@ -216,7 +214,7 @@ void anloro::WorldModel::Optimize()
         roll = eulerR[0];
         pitch = eulerR[1];
         yaw = eulerR[2];
-        
+
         // In case we need the marginals
         // std::cout << "Key-Frame " << key << " has a covariance of:\n"
         //           << marginals.marginalCovariance(key) << std::endl;
@@ -224,6 +222,49 @@ void anloro::WorldModel::Optimize()
         // Then we update the World Model with the optimized poses
         iter.second->second->SetTranslationalAndEulerAngles(x, y, z, roll, pitch, yaw);
     }
+
+    // Now update the links with the marginals and the new constraints
+    // ---------
+
+    // Let's try to just copy the optimized posegraph
+    // NonlinearFactorGraph opgraph;
+    // opgraph = optimizer.graph();
+    // // opgraph.print("This is the optimized graph:\n");
+    // for (std::pair<NonlinearFactorGraph::iterator, std::map<int, PoseFactor *>::const_iterator> iter(opgraph.begin()+1, _poseFactorsMap.begin());
+    //      iter.first != opgraph.end() && iter.second != _poseFactorsMap.end();
+    //      ++iter.first, ++iter.second)
+    // {
+    //     // int newfromid = iter.first->get()->front();
+    //     // int newtoid = iter.first->get()->back();
+    //     int newfromid = boost::reinterpret_pointer_cast<BetweenFactor<Pose3>>(iter.first->get())->keys()[0];
+    //     int newtoid = boost::reinterpret_pointer_cast<BetweenFactor<Pose3>>(iter.first->get())->keys()[1];
+    //     // iter.first->get()->print();
+    //     int maria = boost::reinterpret_pointer_cast<BetweenFactor<Pose3>>(iter.first->get())->keys().size();
+    //     if (maria > 1)
+    //     {
+    //         std::cout << "Estos son de la nueva grafica \n"
+    //                   << newfromid << newtoid << std::endl;
+    //         std::cout << "Estos del Worldmodel \n"
+    //                   << iter.second->second->From() << iter.second->second->To() << std::endl;
+
+    //         if (newtoid == iter.second->second->To() && newfromid == iter.second->second->From())
+    //         {
+    //             Point3 lucia = boost::reinterpret_pointer_cast<BetweenFactor<Pose3>>(iter.first->get())->measured().translation();
+    //             x = lucia.x();
+    //             y = lucia.y();
+    //             z = lucia.z();
+    //             Rot3 paco = boost::reinterpret_pointer_cast<BetweenFactor<Pose3>>(iter.first->get())->measured().rotation();
+    //             Vector3 eulerR = paco.xyz();
+    //             roll = eulerR[0];
+    //             pitch = eulerR[1];
+    //             yaw = eulerR[2];
+    //             iter.second->second->SetTranslationalVector(x, y, z);
+    //             iter.second->second->SetRotationalVector(roll, pitch, yaw);
+    //             std::cout << boost::reinterpret_pointer_cast<BetweenFactor<Pose3>>(iter.first->get())->measured() << std::endl;
+    //             std::cout << boost::reinterpret_pointer_cast<BetweenFactor<Pose3>>(iter.first->get())->keys().size() << std::endl;
+    //         }
+    //     }
+    // }
 
     UpdateCompletePlot();
 }
@@ -242,7 +283,7 @@ std::map<int, Eigen::Affine3f> anloro::WorldModel::GetOptimizedPoses()
         // Get the information of each node
         nodeId = iter->first;
         iter->second->GetTranslationalAndEulerAngles(x, y, z, roll, pitch, yaw);
-        
+
         rtabmapId = GetIdFromInternalMap(nodeId);
 
         Eigen::Matrix3d n;
@@ -269,11 +310,11 @@ void anloro::WorldModel::SavePosesRaw()
     double x, y, z, roll, pitch, yaw;
     // Iterate over the KeyFrame's map
     for (std::map<int, KeyFrame<int> *>::const_iterator iter = _keyFramesMap.begin(); iter != _keyFramesMap.end(); ++iter)
-    {   
+    {
         // Get the information of each node
         nodeId = iter->first;
         iter->second->GetTranslationalAndEulerAngles(x, y, z, roll, pitch, yaw);
-        
+
         // Write to the file
         outputFile << nodeId << " " << x << " " << y << " " << z << " " << roll << " " << pitch << " " << yaw << std::endl;
     }
@@ -310,5 +351,5 @@ void anloro::WorldModel::UpdateCompletePlot()
         newyAxis->push_back(y);
     }
 
-    _plotter.SetAxis(newxAxis, newyAxis);    
+    _plotter.SetAxis(newxAxis, newyAxis);
 }
