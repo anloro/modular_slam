@@ -59,6 +59,7 @@ class WorldModel
         void AddKeyFrameEntity(int nodeId, KeyFrame<int> * keyFrame);
         void DeleteKeyFrameEntity(int id);
         void UnregisterKeyFrame(int id);
+        void TakeCorrectionFromOdometry(int lastLoopId, Eigen::Matrix4f uncorrection);
         // Factor creation
         void AddPoseFactor(PoseFactor * poseFactor);
         // Optimization

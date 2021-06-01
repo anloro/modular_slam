@@ -301,6 +301,39 @@ std::map<int, Eigen::Affine3f> anloro::WorldModel::GetOptimizedPoses()
     return optimizedPoses;
 }
 
+void anloro::WorldModel::TakeCorrectionFromOdometry(int lastLoopId, Eigen::Matrix4f uncorrection)
+{
+    int truid = InternalMapId(lastLoopId);
+
+    double x, y, z, roll, pitch, yaw, ux, uy, uz, uroll, upitch, uyaw;
+    // Iterate over the KeyFrame's map
+    for (std::map<int, KeyFrame<int> *>::const_iterator iter = _keyFramesMap.begin(); iter->first != truid; ++iter)
+    {
+        iter->second->GetTranslationalAndEulerAngles(x, y, z, roll, pitch, yaw);
+
+        Eigen::Matrix3d n;
+        n = Eigen::AngleAxisd(roll, Eigen::Vector3d::UnitX()) * Eigen::AngleAxisd(pitch, Eigen::Vector3d::UnitY()) * Eigen::AngleAxisd(yaw, Eigen::Vector3d::UnitZ());
+        Eigen::Matrix4f m;
+        m << n(0, 0), n(0, 1), n(0, 2), x,
+            n(1, 0), n(1, 1), n(1, 2), y,
+            n(2, 0), n(2, 1), n(2, 2), z,
+            0, 0, 0, 1;
+
+        Eigen::Matrix4f uncorrected = uncorrection * m;
+
+        Eigen::Affine3f t(uncorrected);
+        ux = t(0, 3);
+        uy = t(1, 3);
+        uz = t(2, 3);
+        uroll = atan2f(t(2, 1), t(2, 2));
+        upitch = asinf(-t(2, 0));
+        uyaw = atan2f(t(1, 0), t(0, 0));
+
+        iter->second->SetTranslationalAndEulerAngles(ux, uy, uz, uroll, upitch, uyaw);
+    }
+}
+
+
 void anloro::WorldModel::SavePosesRaw()
 {
     // Create and open a text file
