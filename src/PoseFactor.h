@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include "Transform.h"
+
 namespace anloro{
 
 
@@ -14,22 +16,24 @@ class PoseFactor
 {
 public:
     // Constructors
-    PoseFactor(int fromNode, int toNode, double x, double y, double z, double roll, double pitch, double yaw, 
-                double sigmaX, double sigmaY, double sigmaZ, double sigmaRoll, double sigmaPitch, double sigmaYaw);
+    PoseFactor(int fromNode, int toNode, Transform transform,
+               float sigmaX, float sigmaY, float sigmaZ, float sigmaRoll, float sigmaPitch, float sigmaYaw);
+    PoseFactor(int fromNode, int toNode, Transform transform, float sigmaTranslational, float sigmaRotational);
     // The compiler takes care of the default constructor
     PoseFactor() = default;
+
     // Member functions
-    void SetTranslationalVector(double x, double y, double z);
-    void SetRotationalVector(double x, double y, double z);
-    void GetTranslationalAndEulerAngles(double &x, double &y, double &z, double &roll, double &pitch, double &yaw);
-    void GetEulerVariances(double &sigmaX, double &sigmaY, double &sigmaZ, double &sigmaRoll, double &sigmaPitch, double &sigmaYaw);
+    void SetTransform(Transform transform);
+    Transform GetTransform() {return _transform;};
+    void GetEulerVariances(float &sigmaX, float &sigmaY, float &sigmaZ, float &sigmaRoll, float &sigmaPitch, float &sigmaYaw);
 
     int From();
     int To();
 
 protected:
     int _from, _to;
-    double _x, _y, _z, _roll, _pitch, _yaw, _sigmaX, _sigmaY, _sigmaZ, _sigmaRoll, _sigmaPitch, _sigmaYaw;
+    Transform _transform;
+    float _sigmaX, _sigmaY, _sigmaZ, _sigmaRoll, _sigmaPitch, _sigmaYaw;
 };
 
 } // namespace anloro

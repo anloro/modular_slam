@@ -45,8 +45,6 @@ class WorldModel
         WorldModel(WorldModel const&) = delete;
         // Singletons should not be assignable.
         void operator = (WorldModel const&) = delete;
-        // WorldModel(WorldModel const &) = delete;
-        // void operator=(WorldModel const &) = delete;
 
         // MEMBER FUNCTIONS
         // Public static function returning a reference to the singleton class:
@@ -59,7 +57,7 @@ class WorldModel
         void AddKeyFrameEntity(int nodeId, KeyFrame<int> * keyFrame);
         void DeleteKeyFrameEntity(int id);
         void UnregisterKeyFrame(int id);
-        void TakeCorrectionFromOdometry(int lastLoopId, Eigen::Matrix4f uncorrection);
+        void UndoOdometryCorrection(int lastLoopId, Eigen::Matrix4f uncorrection);
         // Factor creation
         void AddPoseFactor(PoseFactor * poseFactor);
         // Optimization

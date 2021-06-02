@@ -145,22 +145,21 @@ void anloro::WorldModel::Optimize()
     auto priorNoise = noiseModel::Diagonal::Sigmas((Vector(6) << 0.3, 0.3, 0.0, 0.0, 0.0, 0.1).finished());
     graph.addPrior(initId, priorPose, priorNoise);
 
-    // Add the Pose3 factors
-    Eigen::Matrix3d n;
+    Transform transform;
     int idFrom, idTo, NodeId;
-    double x, y, z, roll, pitch, yaw, sigmaX, sigmaY, sigmaZ, sigmaRoll, sigmaPitch, sigmaYaw;
+
+    // Add the Pose3 factors
+    float sigmaX, sigmaY, sigmaZ, sigmaRoll, sigmaPitch, sigmaYaw;
     for (std::map<int, PoseFactor *>::const_iterator iter = _poseFactorsMap.begin(); iter != _poseFactorsMap.end(); ++iter)
     {
         idFrom = iter->second->From();
         idTo = iter->second->To();
-        iter->second->GetTranslationalAndEulerAngles(x, y, z, roll, pitch, yaw);
+        transform = iter->second->GetTransform();
+
         iter->second->GetEulerVariances(sigmaX, sigmaY, sigmaZ, sigmaRoll, sigmaPitch, sigmaYaw);
         auto noiseModel = noiseModel::Diagonal::Sigmas((Vector(6) << sigmaX, sigmaY, sigmaZ, sigmaRoll, sigmaPitch, sigmaYaw).finished());
-        n = Eigen::AngleAxisd(roll, Eigen::Vector3d::UnitX()) * Eigen::AngleAxisd(pitch, Eigen::Vector3d::UnitY()) * Eigen::AngleAxisd(yaw, Eigen::Vector3d::UnitZ());
-        Rot3 newR = Rot3(n);
-        // Rot3 newR = Rot3().Yaw(yaw).Pitch(pitch).Roll(roll);
-        Point3 newP = Point3(x, y, z);
-        Pose3 newMean = Pose3(newR, newP);
+        Pose3 newMean = Pose3(transform.ToMatrix4f().cast<double>());
+
         graph.emplace_shared<BetweenFactor<Pose3>>(idFrom, idTo, newMean, noiseModel);
     }
 
@@ -168,11 +167,8 @@ void anloro::WorldModel::Optimize()
     for (std::map<int, KeyFrame<int> *>::const_iterator iter = _keyFramesMap.begin(); iter != _keyFramesMap.end(); ++iter)
     {
         NodeId = iter->first;
-        iter->second->GetTranslationalAndEulerAngles(x, y, z, roll, pitch, yaw);
-        n = Eigen::AngleAxisd(roll, Eigen::Vector3d::UnitX()) * Eigen::AngleAxisd(pitch, Eigen::Vector3d::UnitY()) * Eigen::AngleAxisd(yaw, Eigen::Vector3d::UnitZ());
-        Rot3 newR = Rot3(n);
-        Point3 newP = Point3(x, y, z);
-        Pose3 newPose = Pose3(newR, newP);
+        transform = iter->second->GetTransform();
+        Pose3 newPose = Pose3(transform.ToMatrix4f().cast<double>());
         initialEstimate.insert(NodeId, newPose);
     }
 
@@ -184,10 +180,10 @@ void anloro::WorldModel::Optimize()
     // Do not perform more than N iteration steps
     parameters.maxIterations = 100;
     GaussNewtonOptimizer optimizer(graph, initialEstimate, parameters);
-    double err0 = optimizer.error();
+    float err0 = optimizer.error();
     std::cout << "The error is: " << err0 << std::endl;
     optimizedPoses = optimizer.optimize();
-    double err = optimizer.error();
+    float err = optimizer.error();
     std::cout << "The error is: " << err << std::endl;
 
     // This is for testing
@@ -196,31 +192,23 @@ void anloro::WorldModel::Optimize()
     std::cout.precision(3);
     Marginals marginals(graph, optimizedPoses);
 
-    // for (Values::const_iterator iter = optimizer.values().begin(); iter != optimizer.values().end(); ++iter)
-
     // Update the World Model with the optimized poses.
     for (std::pair<Values::const_iterator, std::map<int, KeyFrame<int> *>::const_iterator> iter(optimizer.values().begin(), _keyFramesMap.begin());
          iter.first != optimizer.values().end() && iter.second != _keyFramesMap.end();
          ++iter.first, ++iter.second)
     {
         // First get the optimized poses from the optimizer in Euler format
-        int key = (int)iter.first->key;
+        int graphKey = (int)iter.first->key;
         Pose3 optimizedPose = iter.first->value.cast<Pose3>();
-        x = optimizedPose.x();
-        y = optimizedPose.y();
-        z = optimizedPose.z();
-        Rot3 r = optimizedPose.rotation();
-        Vector3 eulerR = r.xyz();
-        roll = eulerR[0];
-        pitch = eulerR[1];
-        yaw = eulerR[2];
+        Eigen::Matrix4f matrix = optimizedPose.matrix().cast<float>();
+        Transform transform = Transform(matrix);
 
-        // In case we need the marginals
-        // std::cout << "Key-Frame " << key << " has a covariance of:\n"
-        //           << marginals.marginalCovariance(key) << std::endl;
-
-        // Then we update the World Model with the optimized poses
-        iter.second->second->SetTranslationalAndEulerAngles(x, y, z, roll, pitch, yaw);
+        int worldKey = iter.second->first;
+        if (graphKey == worldKey)
+        {
+            // Then we update the World Model with the optimized poses
+            iter.second->second->SetTransform(transform);
+        }
     }
 
     // Now update the links with the marginals and the new constraints
@@ -273,7 +261,7 @@ void anloro::WorldModel::Optimize()
 std::map<int, Eigen::Affine3f> anloro::WorldModel::GetOptimizedPoses()
 {
     int nodeId, rtabmapId;
-    double x, y, z, roll, pitch, yaw;
+    Transform transform;
     std::map<int, Eigen::Affine3f> optimizedPoses;
     typedef std::pair<int, Eigen::Affine3f> optimizedPose;
 
@@ -282,54 +270,29 @@ std::map<int, Eigen::Affine3f> anloro::WorldModel::GetOptimizedPoses()
     {
         // Get the information of each node
         nodeId = iter->first;
-        iter->second->GetTranslationalAndEulerAngles(x, y, z, roll, pitch, yaw);
-
+        transform = iter->second->GetTransform();
         rtabmapId = GetIdFromInternalMap(nodeId);
 
-        Eigen::Matrix3d n;
-        n = Eigen::AngleAxisd(roll, Eigen::Vector3d::UnitX()) * Eigen::AngleAxisd(pitch, Eigen::Vector3d::UnitY()) * Eigen::AngleAxisd(yaw, Eigen::Vector3d::UnitZ());
-        Eigen::Matrix4f m;
-        m << n(0, 0), n(0, 1), n(0, 2), x,
-            n(1, 0), n(1, 1), n(1, 2), y,
-            n(2, 0), n(2, 1), n(2, 2), z,
-            0, 0, 0, 1;
-        Eigen::Affine3f transform = Eigen::Affine3f(m);
-
-        optimizedPoses.insert(optimizedPose(rtabmapId, transform));
+        optimizedPoses.insert(optimizedPose(rtabmapId, transform.GetAffineTransform()));
     }
 
     return optimizedPoses;
 }
 
-void anloro::WorldModel::TakeCorrectionFromOdometry(int lastLoopId, Eigen::Matrix4f uncorrection)
+void anloro::WorldModel::UndoOdometryCorrection(int lastLoopId, Eigen::Matrix4f uncorrection)
 {
     int truid = InternalMapId(lastLoopId);
+    Transform transform, newTransform;
+    Eigen::Matrix4f uncorrected;
 
-    double x, y, z, roll, pitch, yaw, ux, uy, uz, uroll, upitch, uyaw;
     // Iterate over the KeyFrame's map
     for (std::map<int, KeyFrame<int> *>::const_iterator iter = _keyFramesMap.begin(); iter->first != truid; ++iter)
     {
-        iter->second->GetTranslationalAndEulerAngles(x, y, z, roll, pitch, yaw);
+        transform = iter->second->GetTransform();
+        uncorrected = uncorrection * transform.ToMatrix4f();
+        newTransform = Transform(uncorrected);
 
-        Eigen::Matrix3d n;
-        n = Eigen::AngleAxisd(roll, Eigen::Vector3d::UnitX()) * Eigen::AngleAxisd(pitch, Eigen::Vector3d::UnitY()) * Eigen::AngleAxisd(yaw, Eigen::Vector3d::UnitZ());
-        Eigen::Matrix4f m;
-        m << n(0, 0), n(0, 1), n(0, 2), x,
-            n(1, 0), n(1, 1), n(1, 2), y,
-            n(2, 0), n(2, 1), n(2, 2), z,
-            0, 0, 0, 1;
-
-        Eigen::Matrix4f uncorrected = uncorrection * m;
-
-        Eigen::Affine3f t(uncorrected);
-        ux = t(0, 3);
-        uy = t(1, 3);
-        uz = t(2, 3);
-        uroll = atan2f(t(2, 1), t(2, 2));
-        upitch = asinf(-t(2, 0));
-        uyaw = atan2f(t(1, 0), t(0, 0));
-
-        iter->second->SetTranslationalAndEulerAngles(ux, uy, uz, uroll, upitch, uyaw);
+        iter->second->SetTransform(newTransform);
     }
 }
 
@@ -340,13 +303,16 @@ void anloro::WorldModel::SavePosesRaw()
     std::ofstream outputFile("rawposes.txt");
 
     int nodeId;
-    double x, y, z, roll, pitch, yaw;
+    float x, y, z, roll, pitch, yaw;
+    Transform transform;
+
     // Iterate over the KeyFrame's map
     for (std::map<int, KeyFrame<int> *>::const_iterator iter = _keyFramesMap.begin(); iter != _keyFramesMap.end(); ++iter)
     {
         // Get the information of each node
         nodeId = iter->first;
-        iter->second->GetTranslationalAndEulerAngles(x, y, z, roll, pitch, yaw);
+        transform = iter->second->GetTransform();
+        transform.GetTranslationalAndEulerAngles(x, y, z, roll, pitch, yaw);
 
         // Write to the file
         outputFile << nodeId << " " << x << " " << y << " " << z << " " << roll << " " << pitch << " " << yaw << std::endl;
@@ -360,18 +326,19 @@ void anloro::WorldModel::SavePosesRaw()
 
 void anloro::WorldModel::InsertKeyFrameToPlot(KeyFrame<int> *keyFrame)
 {
-    double x, y, z, roll, pitch, yaw;
+    float x, y, z, roll, pitch, yaw;
 
     std::vector<float> *xAxis = _plotter.GetxAxis();
     std::vector<float> *yAxis = _plotter.GetyAxis();
-    keyFrame->GetTranslationalAndEulerAngles(x, y, z, roll, pitch, yaw);
+    Transform transform = keyFrame->GetTransform();
+    transform.GetTranslationalAndEulerAngles(x, y, z, roll, pitch, yaw);
     xAxis->push_back(x);
     yAxis->push_back(y);
 }
 
 void anloro::WorldModel::UpdateCompletePlot()
 {
-    double x, y, z, roll, pitch, yaw;
+    float x, y, z, roll, pitch, yaw;
 
     std::vector<float> *newxAxis = new std::vector<float>{};
     std::vector<float> *newyAxis = new std::vector<float>{};
@@ -379,7 +346,8 @@ void anloro::WorldModel::UpdateCompletePlot()
     for (std::map<int, KeyFrame<int> *>::const_iterator iter = _keyFramesMap.begin(); iter != _keyFramesMap.end(); ++iter)
     {
         // Get the information of each node
-        iter->second->GetTranslationalAndEulerAngles(x, y, z, roll, pitch, yaw);
+        Transform transform = iter->second->GetTransform();
+        transform.GetTranslationalAndEulerAngles(x, y, z, roll, pitch, yaw);
         newxAxis->push_back(x);
         newyAxis->push_back(y);
     }

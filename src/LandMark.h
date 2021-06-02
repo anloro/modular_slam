@@ -19,14 +19,14 @@ class LandMark
 {
 public:
     // Constructors
-    LandMark(double x, double y, double z);
+    LandMark(float x, float y, float z);
     // The compiler takes care of the default constructor
     LandMark() = default;
 
     // Member functions
-    void SetTranslationalVector(double x, double y, double z);
-    std::tuple<double, double, double> GetTranslationalVector();
+    void SetTranslationalVector(float x, float y, float z);
+    std::tuple<float, float, float> GetTranslationalVector();
 
 protected:
-    double _x, _y, _z;
+    float _x, _y, _z;
 };

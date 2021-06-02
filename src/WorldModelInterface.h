@@ -22,17 +22,75 @@ class WorldModelInterface
         WorldModelInterface(std::string id);
 
         // MEMBER FUNCTIONS
-        std::string GetInterfaceId();
-        void AddRefFrame(double x, double y, double z, double roll, double pitch, double yaw);
-        void AddKeyFrame(int id, double x, double y, double z, double roll, double pitch, double yaw);
-        void AddPoseConstraint(int fromNode, int toNode, double x, double y, double z, double roll, double pitch, double yaw,
-                           double sigmaX, double sigmaY, double sigmaZ, double sigmaRoll, double sigmaPitch, double sigmaYaw);
+        // Add a reference frame
+        void AddRefFrame(float x, float y, float z, float roll, float pitch, float yaw);
+
+        void AddRefFrame(float r11, float r12, float r13, float o14,
+                         float r21, float r22, float r23, float o24,
+                         float r31, float r32, float r33, float o34);
+
+        void AddRefFrame(Eigen::Matrix4f matrix);
+
+        void AddRefFrame(Eigen::Affine3f affineT);
+
+        void AddRefFrame(Transform transform);
+
+        // Add a Key-frame
+        void AddKeyFrame(int id, float x, float y, float z, float roll, float pitch, float yaw);
+
+        void AddKeyFrame(int id, 
+                         float r11, float r12, float r13, float o14,
+                         float r21, float r22, float r23, float o24,
+                         float r31, float r32, float r33, float o34);
+
+        void AddKeyFrame(int id, Eigen::Matrix4f matrix);
+
+        void AddKeyFrame(int id, Eigen::Affine3f affineT);
+
+        void AddKeyFrame(int id, Transform transform);
+
+        // Add a pose constraint
         void AddPoseConstraint(int fromNode, int toNode, 
-                                Eigen::Affine3f transform, Eigen::Matrix<double, 6, 6> noiseModel);
-        // from pcl library
-        void getTranslationAndEulerAngles(const Eigen::Affine3f &t, double &x, double &y, double &z, double &roll, double &pitch, double &yaw);
+                                float x, float y, float z, 
+                                float roll, float pitch, float yaw,
+                                float sigmaX, float sigmaY, float sigmaZ, 
+                                float sigmaRoll, float sigmaPitch, float sigmaYaw);
+
+        void AddPoseConstraint(int fromNode, int toNode, 
+                                float x, float y, float z, 
+                                float roll, float pitch, float yaw,
+                                float sigmaTranslational, 
+                                float sigmaRotational);
+
+        void AddPoseConstraint(int fromNode, int toNode, 
+                                Eigen::Affine3f affineT,
+                                float sigmaX, float sigmaY, float sigmaZ, 
+                                float sigmaRoll, float sigmaPitch, float sigmaYaw);
+
+        void AddPoseConstraint(int fromNode, int toNode, 
+                                Eigen::Affine3f affineT, 
+                                float sigmaTranslational, 
+                                float sigmaRotational);
+
+        void AddPoseConstraint(int fromNode, int toNode,
+                                Eigen::Affine3f affineT,
+                                Eigen::Matrix<float, 6, 6> noiseModel);
+
+        void AddPoseConstraint(int fromNode, int toNode,
+                               Transform transform,
+                               float sigmaX, float sigmaY, float sigmaZ,
+                               float sigmaRoll, float sigmaPitch, float sigmaYaw);
+
+        // Get the interface's ID
+        std::string GetInterfaceId();
+
+        // Get the optimized poses from the World model
         std::map<int, Eigen::Affine3f> GetOptimizedPoses();
+
+        // Optimize the pose-graph
         void Optimize();
+
+        // Save the poses into a txt file in Euler format
         void SavePosesRaw(); 
     
     protected: 

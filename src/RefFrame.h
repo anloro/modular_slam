@@ -9,6 +9,7 @@
 
 #include <tuple>
 #include <iostream>
+#include "Transform.h"
 
 namespace anloro{
 
@@ -16,19 +17,16 @@ class RefFrame
 {
 public:
     // Constructors
-    RefFrame(double x, double y, double z, double roll, double pitch, double yaw);
+    RefFrame(Transform transform);
     // The compiler takes care of the default constructor
     RefFrame() = default;
+
     // Member functions
-    void SetTranslationalVector(double x, double y, double z);
-    std::tuple<double, double, double> GetTranslationalVector();
-    void SetRotationalVector(double x, double y, double z);
-    std::tuple<double, double, double> GetRotationalVector();
-    void GetTranslationalAndEulerAngles(double &x, double &y, double &z, double &roll, double &pitch, double &yaw);
-    void SetTranslationalAndEulerAngles(double x, double y, double z, double roll, double pitch, double yaw);
+    void SetTransform(Transform transform);
+    Transform GetTransform(){return _transform;};
 
 protected:
-    double _x, _y, _z, _roll, _pitch, _yaw;
+    Transform _transform;
 };
 
 } // namespace anloro

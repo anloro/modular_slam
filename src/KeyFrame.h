@@ -18,8 +18,7 @@ class KeyFrame : public RefFrame
 {
 public:
     // Constructors
-    KeyFrame(double x, double y, double z, double roll, double pitch, double yaw);
-    KeyFrame(double x, double y, double z, double roll, double pitch, double yaw, Ts &...t);
+    KeyFrame(Transform transform, Ts &...t);
     // The compiler takes care of the default constructor
     KeyFrame() = default;
 
@@ -31,14 +30,10 @@ protected:
 };
 
 template <class... Ts>
-KeyFrame<Ts...>::KeyFrame(double x, double y, double z, double roll, double pitch, double yaw, Ts &...data)
+KeyFrame<Ts...>::KeyFrame(Transform transform, Ts &...data)
 {
-    _x = x;
-    _y = y;
-    _z = z;
-    _roll = roll;
-    _pitch = pitch;
-    _yaw = yaw;
+    _transform = transform;
+
     std::tuple<Ts...> rawData = std::tuple<Ts...>(data...);
     _rawData = rawData;
 }

@@ -4,59 +4,44 @@
  * @author Ángel Lorente Rogel
  * @date   04/05/2021
  */
+
+
 #include "PoseFactor.h"
 
-anloro::PoseFactor::PoseFactor(int fromNode, int toNode, double x, double y, double z, double roll, double pitch, double yaw,
-                             double sigmaX, double sigmaY, double sigmaZ, double sigmaRoll, double sigmaPitch, double sigmaYaw)
+anloro::PoseFactor::PoseFactor(int fromNode, int toNode, Transform transform,
+                               float sigmaX, float sigmaY, float sigmaZ, float sigmaRoll, float sigmaPitch, float sigmaYaw)
 {
-    PoseFactor::_from = fromNode;
-    PoseFactor::_to = toNode;
-    PoseFactor::_x = x;
-    PoseFactor::_y = y;
-    PoseFactor::_z = z;
-    PoseFactor::_roll = roll;
-    PoseFactor::_pitch = pitch;
-    PoseFactor::_yaw = yaw;
-    PoseFactor::_sigmaX = sigmaX;
-    PoseFactor::_sigmaY = sigmaY;
-    PoseFactor::_sigmaZ = sigmaZ;
-    PoseFactor::_sigmaRoll = sigmaRoll;
-    PoseFactor::_sigmaPitch = sigmaPitch;
-    PoseFactor::_sigmaYaw = sigmaYaw;
+    _from = fromNode;
+    _to = toNode;
+    _transform = transform;
+    _sigmaX = sigmaX;
+    _sigmaY = sigmaY;
+    _sigmaZ = sigmaZ;
+    _sigmaRoll = sigmaRoll;
+    _sigmaPitch = sigmaPitch;
+    _sigmaYaw = sigmaYaw;
 }
 
-void anloro::PoseFactor::SetTranslationalVector(double x, double y, double z)
+anloro::PoseFactor::PoseFactor(int fromNode, int toNode, Transform transform, float sigmaTranslational, float sigmaRotational)
 {
-    PoseFactor::_x = x;
-    PoseFactor::_y = y;
-    PoseFactor::_z = z;
+    *this = PoseFactor(fromNode, toNode, transform,
+                       sigmaTranslational, sigmaTranslational, sigmaTranslational,
+                       sigmaRotational, sigmaRotational, sigmaRotational);
 }
 
-void anloro::PoseFactor::SetRotationalVector(double roll, double pitch, double yaw)
+void anloro::PoseFactor::GetEulerVariances(float &sigmaX, float &sigmaY, float &sigmaZ, float &sigmaRoll, float &sigmaPitch, float &sigmaYaw)
 {
-    PoseFactor::_roll = roll;
-    PoseFactor::_pitch = pitch;
-    PoseFactor::_yaw = yaw;
+    sigmaX = _sigmaX;
+    sigmaY = _sigmaY;
+    sigmaZ = _sigmaZ;
+    sigmaRoll = _sigmaRoll;
+    sigmaPitch = _sigmaPitch;
+    sigmaYaw = _sigmaYaw;
 }
 
-void anloro::PoseFactor::GetTranslationalAndEulerAngles(double &x, double &y, double &z, double &roll, double &pitch, double &yaw)
+void anloro::PoseFactor::SetTransform(Transform transform)
 {
-    x = PoseFactor::_x;
-    y = PoseFactor::_y;
-    z = PoseFactor::_z;
-    roll = PoseFactor::_roll;
-    pitch = PoseFactor::_pitch;
-    yaw = PoseFactor::_yaw;
-}
-
-void anloro::PoseFactor::GetEulerVariances(double &sigmaX, double &sigmaY, double &sigmaZ, double &sigmaRoll, double &sigmaPitch, double &sigmaYaw)
-{
-    sigmaX = PoseFactor::_sigmaX;
-    sigmaY = PoseFactor::_sigmaY;
-    sigmaZ = PoseFactor::_sigmaZ;
-    sigmaRoll = PoseFactor::_sigmaRoll;
-    sigmaPitch = PoseFactor::_sigmaPitch;
-    sigmaYaw = PoseFactor::_sigmaYaw;
+    _transform = transform;
 }
 
 int anloro::PoseFactor::From()
