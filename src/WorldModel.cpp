@@ -87,6 +87,8 @@ int anloro::WorldModel::GetIdFromInternalMap(int id)
     if (_modularToRtab.count(id) == 0)
     {
         // ID not found!
+        std::cout << "WARNING: ID " << id << " not found!" << std::endl;
+        return id;
     }
     else
     {
@@ -197,8 +199,8 @@ void anloro::WorldModel::Optimize()
          iter.first != optimizer.values().end() && iter.second != _keyFramesMap.end();
          ++iter.first, ++iter.second)
     {
-        // First get the optimized poses from the optimizer in Euler format
         int graphKey = (int)iter.first->key;
+        // Get the optimized poses from the optimizer
         Pose3 optimizedPose = iter.first->value.cast<Pose3>();
         Eigen::Matrix4f matrix = optimizedPose.matrix().cast<float>();
         Transform transform = Transform(matrix);
@@ -206,53 +208,10 @@ void anloro::WorldModel::Optimize()
         int worldKey = iter.second->first;
         if (graphKey == worldKey)
         {
-            // Then we update the World Model with the optimized poses
+            // Update the World Model with the optimized poses
             iter.second->second->SetTransform(transform);
         }
     }
-
-    // Now update the links with the marginals and the new constraints
-    // ---------
-
-    // Let's try to just copy the optimized posegraph
-    // NonlinearFactorGraph opgraph;
-    // opgraph = optimizer.graph();
-    // // opgraph.print("This is the optimized graph:\n");
-    // for (std::pair<NonlinearFactorGraph::iterator, std::map<int, PoseFactor *>::const_iterator> iter(opgraph.begin()+1, _poseFactorsMap.begin());
-    //      iter.first != opgraph.end() && iter.second != _poseFactorsMap.end();
-    //      ++iter.first, ++iter.second)
-    // {
-    //     // int newfromid = iter.first->get()->front();
-    //     // int newtoid = iter.first->get()->back();
-    //     int newfromid = boost::reinterpret_pointer_cast<BetweenFactor<Pose3>>(iter.first->get())->keys()[0];
-    //     int newtoid = boost::reinterpret_pointer_cast<BetweenFactor<Pose3>>(iter.first->get())->keys()[1];
-    //     // iter.first->get()->print();
-    //     int maria = boost::reinterpret_pointer_cast<BetweenFactor<Pose3>>(iter.first->get())->keys().size();
-    //     if (maria > 1)
-    //     {
-    //         std::cout << "Estos son de la nueva grafica \n"
-    //                   << newfromid << newtoid << std::endl;
-    //         std::cout << "Estos del Worldmodel \n"
-    //                   << iter.second->second->From() << iter.second->second->To() << std::endl;
-
-    //         if (newtoid == iter.second->second->To() && newfromid == iter.second->second->From())
-    //         {
-    //             Point3 lucia = boost::reinterpret_pointer_cast<BetweenFactor<Pose3>>(iter.first->get())->measured().translation();
-    //             x = lucia.x();
-    //             y = lucia.y();
-    //             z = lucia.z();
-    //             Rot3 paco = boost::reinterpret_pointer_cast<BetweenFactor<Pose3>>(iter.first->get())->measured().rotation();
-    //             Vector3 eulerR = paco.xyz();
-    //             roll = eulerR[0];
-    //             pitch = eulerR[1];
-    //             yaw = eulerR[2];
-    //             iter.second->second->SetTranslationalVector(x, y, z);
-    //             iter.second->second->SetRotationalVector(roll, pitch, yaw);
-    //             std::cout << boost::reinterpret_pointer_cast<BetweenFactor<Pose3>>(iter.first->get())->measured() << std::endl;
-    //             std::cout << boost::reinterpret_pointer_cast<BetweenFactor<Pose3>>(iter.first->get())->keys().size() << std::endl;
-    //         }
-    //     }
-    // }
 
     UpdateCompletePlot();
 }

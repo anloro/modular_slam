@@ -10,6 +10,7 @@
 #include "WorldModelPlotter.h"
 
 #include <thread>
+#include <cmath>
 
 int main()
 {
@@ -58,12 +59,17 @@ int main()
          0, 0, 0, 1;
     Eigen::Affine3f a = Eigen::Affine3f(m);
 
-    interface.AddPoseConstraint(1, 2, 2, 0, 0, 0, 0, 0, 0.2, 0.2, 0, 0.1, 0.1, 0.1);
-    interface.AddPoseConstraint(2, 3, 2, 0, 0, 0, 0, M_PI_2, 0.2, 0.2, 0, 0.1, 0.1, 0.1);
-    interface.AddPoseConstraint(3, 4, 2, 0, 0, 0, 0, M_PI_2, 0.2, 0.2, 0, 0.1, 0.1, 0.1);
-    interface.AddPoseConstraint(4, 5, 2, 0, 0, 0, 0, M_PI_2, 0.2, 0.2, 0, 0.1, 0.1, 0.1);
+    float zeroTwo, zeroOne, mpi2;
+    zeroTwo = pow(0.2, 1);
+    zeroOne = pow(0.1, 1);
+    mpi2 = pow(M_PI_2, 1);
+
+    interface.AddPoseConstraint(1, 2, 2, 0, 0, 0, 0, 0, zeroTwo, zeroTwo, 0, zeroOne, zeroOne, zeroOne);
+    interface.AddPoseConstraint(2, 3, 2, 0, 0, 0, 0, mpi2, zeroTwo, zeroTwo, 0, zeroOne, zeroOne, zeroOne);
+    interface.AddPoseConstraint(3, 4, 2, 0, 0, 0, 0, mpi2, zeroTwo, zeroTwo, 0, zeroOne, zeroOne, zeroOne);
+    interface.AddPoseConstraint(4, 5, 2, 0, 0, 0, 0, mpi2, zeroTwo, zeroTwo, 0, zeroOne, zeroOne, zeroOne);
     // loop closure
-    interface.AddPoseConstraint(5, 2, 2, 0, 0, 0, 0, M_PI_2, 0.2, 0.2, 0, 0.1, 0.1, 0.1);
+    interface.AddPoseConstraint(5, 2, 2, 0, 0, 0, 0, mpi2, zeroTwo, zeroTwo, 0, zeroOne, zeroOne, zeroOne);
 
     // 3. Create the data structure to hold the initialEstimate estimate to the solution
     // For illustrative purposes, these have been deliberately set to incorrect values
