@@ -174,42 +174,82 @@ void anloro::WorldModel::Optimize()
         initialEstimate.insert(NodeId, newPose);
     }
 
-    // graph.print("This is the graph:\n");
-    // initialEstimate.print("This is the initial estimate:\n");
-    GaussNewtonParams parameters;
-    // Stop iterating once the change in error between steps is less than this value
-    parameters.relativeErrorTol = 1e-5;
-    // Do not perform more than N iteration steps
-    parameters.maxIterations = 100;
-    GaussNewtonOptimizer optimizer(graph, initialEstimate, parameters);
-    float err0 = optimizer.error();
-    std::cout << "The error is: " << err0 << std::endl;
-    optimizedPoses = optimizer.optimize();
-    float err = optimizer.error();
-    std::cout << "The error is: " << err << std::endl;
 
-    // This is for testing
-    // optimizedPoses.print("Optimized poses:\n");
-    // Calculate and print marginal covariances for all variables
-    std::cout.precision(3);
-    Marginals marginals(graph, optimizedPoses);
+    // GaussNewtonParams parameters;
+    LevenbergMarquardtParams parameters;
+    int maxIterations = 100; 
+    float relativeErrorTol = 1e-5; // Stop iterating if the error is below this value
+    parameters.relativeErrorTol = relativeErrorTol;
+    parameters.maxIterations = maxIterations;
+    // GaussNewtonOptimizer optimizer(graph, initialEstimate, parameters);
+    LevenbergMarquardtOptimizer optimizer(graph, initialEstimate, parameters);
+    float iniError = optimizer.error();
+    std::cout << "The initial error is: " << iniError << std::endl;
 
+    // TRY gtsam approach in RTAB-Map
+    int it = 0;
+    double lastError = optimizer.error();
+    for (int i = 0; i < maxIterations; ++i)
+    {
+        try
+        {
+            optimizer.iterate();
+            ++it;
+        }
+        catch (gtsam::IndeterminantLinearSystemException &e)
+        {
+            std::cout << e.what() << std::endl;
+        }
+        // early stop condition
+        double error = optimizer.error();
+        double errorDelta = lastError - error;
+        if (i > 0 && errorDelta < relativeErrorTol)
+        {
+            if (errorDelta < 0)
+            {
+                // Negative improvement?! Ignore and continue optimizing...
+            }
+            else
+            {
+                // Not enough improvement, stop optimization.
+                break;
+            }
+        }
+        else if (i == 0 && error < relativeErrorTol)
+        {
+            // Error is already under relativeErrorTol, stop optimization.
+            break;
+        }
+        lastError = error;
+        std::cout << "The error after the iteration " << i << " is: " << error << std::endl;
+    }
+
+    // optimizedPoses = optimizer.optimize();
+    // float endError = optimizer.error();
+    // std::cout << "The error after complete optimization is: " << endError << std::endl;
+
+    int graphKey, worldKey;
     // Update the World Model with the optimized poses.
     for (std::pair<Values::const_iterator, std::map<int, KeyFrame<int> *>::const_iterator> iter(optimizer.values().begin(), _keyFramesMap.begin());
          iter.first != optimizer.values().end() && iter.second != _keyFramesMap.end();
          ++iter.first, ++iter.second)
     {
-        int graphKey = (int)iter.first->key;
         // Get the optimized poses from the optimizer
         Pose3 optimizedPose = iter.first->value.cast<Pose3>();
         Eigen::Matrix4f matrix = optimizedPose.matrix().cast<float>();
         Transform transform = Transform(matrix);
 
-        int worldKey = iter.second->first;
+        // Check if the iterator is in the same node.
+        graphKey = (int)iter.first->key;
+        worldKey = iter.second->first;
         if (graphKey == worldKey)
         {
             // Update the World Model with the optimized poses
             iter.second->second->SetTransform(transform);
+        }
+        else
+        {
+            std::cout << "ERROR: The World model update is failing!" << std::endl;
         }
     }
 
@@ -301,11 +341,12 @@ void anloro::WorldModel::UpdateCompletePlot()
 
     std::vector<float> *newxAxis = new std::vector<float>{};
     std::vector<float> *newyAxis = new std::vector<float>{};
+    Transform transform;
     // Iterate over the KeyFrame's map
     for (std::map<int, KeyFrame<int> *>::const_iterator iter = _keyFramesMap.begin(); iter != _keyFramesMap.end(); ++iter)
     {
         // Get the information of each node
-        Transform transform = iter->second->GetTransform();
+        transform = iter->second->GetTransform();
         transform.GetTranslationalAndEulerAngles(x, y, z, roll, pitch, yaw);
         newxAxis->push_back(x);
         newyAxis->push_back(y);
