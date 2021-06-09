@@ -1,11 +1,13 @@
 # modular_slam
 
-SFML
+## Necessary packages
+
+### SFML
 sudo apt-get install libsfml-dev
 
-GTSAM
-# Add PPA
+### GTSAM
+Add PPA
 sudo add-apt-repository ppa:borglab/gtsam-release-4.0
 sudo apt update  # not necessary since Bionic
-# Install:
+Install:
 sudo apt install libgtsam-dev libgtsam-unstable-dev
