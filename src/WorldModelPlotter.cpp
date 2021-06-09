@@ -16,7 +16,7 @@ anloro::WorldModelPlotter::WorldModelPlotter()
     settings.antialiasingLevel = 4;
 
     _window = new sf::RenderWindow(sf::VideoMode(800, 800), "Trajectory", sf::Style::Default, settings);
-    _font.loadFromFile("/home/angel/Documents/02_master_thesis/project/lato/Lato-Regular.ttf");
+    _font.loadFromFile("../lato/Lato-Regular.ttf");
 
     _xAxis = new std::vector<float>{};
     _yAxis = new std::vector<float>{};

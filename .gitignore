@@ -12,5 +12,5 @@ rtabmap
 catkin_ws
 cvsba-1.0.0
 SFPlot
-lato
+# lato
 testing
