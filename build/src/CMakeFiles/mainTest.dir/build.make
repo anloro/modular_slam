@@ -79,7 +79,7 @@ mainTest_EXTERNAL_OBJECTS =
 
 src/mainTest: src/CMakeFiles/mainTest.dir/main.cpp.o
 src/mainTest: src/CMakeFiles/mainTest.dir/build.make
-src/mainTest: src/libmodularslam.a
+src/mainTest: src/libmodularslam.so
 src/mainTest: src/CMakeFiles/mainTest.dir/link.txt
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/angel/Documents/02_master_thesis/modularslam/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Linking CXX executable mainTest"
 	cd /home/angel/Documents/02_master_thesis/modularslam/build/src && $(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/mainTest.dir/link.txt --verbose=$(VERBOSE)

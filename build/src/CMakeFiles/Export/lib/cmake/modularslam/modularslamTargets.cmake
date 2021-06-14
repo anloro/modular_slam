@@ -51,7 +51,7 @@ if(_IMPORT_PREFIX STREQUAL "/")
 endif()
 
 # Create imported target modularslam::modularslam
-add_library(modularslam::modularslam STATIC IMPORTED)
+add_library(modularslam::modularslam SHARED IMPORTED)
 
 set_target_properties(modularslam::modularslam PROPERTIES
   INTERFACE_COMPILE_DEFINITIONS "MODULARSLAM_DEBUG=\$<CONFIG:Debug>"

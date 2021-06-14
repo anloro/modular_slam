@@ -48,14 +48,14 @@ install(
 #   - foo/*.h -> <prefix>/include/foo/*.h
 install(
     FILES ${HEADERS_PUBLIC}
-    DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/${LIBRARY_FOLDER}"
+    DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/${LIBRARY_NAME}"
 )
 
 # Headers:
 #   - generated_headers/foo/version.h -> <prefix>/include/foo/version.h
 install(
     FILES       "${GENERATED_HEADERS_DIR}/${LIBRARY_FOLDER}/version.h"
-    DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/${LIBRARY_FOLDER}"
+    DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/${LIBRARY_NAME}"
 )
 
 # Config

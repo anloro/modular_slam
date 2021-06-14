@@ -8,8 +8,8 @@ file(REMOVE_RECURSE
   "CMakeFiles/modularslam.dir/WorldModel.cpp.o"
   "CMakeFiles/modularslam.dir/WorldModelInterface.cpp.o"
   "CMakeFiles/modularslam.dir/WorldModelPlotter.cpp.o"
-  "libmodularslam.a"
   "libmodularslam.pdb"
+  "libmodularslam.so"
 )
 
 # Per-language clean rules from dependency scanning.
