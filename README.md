@@ -1,4 +1,4 @@
-# modularslam
+# modular_slam
 
 ## Necessary packages
 
@@ -18,6 +18,14 @@ Install:
 sudo apt install libgtsam-dev libgtsam-unstable-dev
 ```
 
+### Other dependencies
+```
+Eigen v3.3
+tbb
+pthread 
+cpp std17
+```
+
 ## Installation
 ```bash
 mkdir build
@@ -25,4 +33,23 @@ cd build/
 cmake -DBUILD_SHARED_LIBS=ON ..
 make 
 sudo make install
+```
+
+## Bibliography
+rtabmap  
+rtabmap-ros  
+
+### Additional packages used during testing
+
+### apriltag_ros
+```
+sudo apt-get install ros-noetic-apriltag-ros
+```
+
+### turtlebot3
+```
+sudo apt-get install ros-noetic-turtlebot3
+sudo apt-get install ros-noetic-gazebo
+sudo apt-get install ros-noetic-bringup
+sudo apt-get install ros-noetic-turtlebot3-teleop
 ```
