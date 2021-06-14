@@ -23,5 +23,6 @@ sudo apt install libgtsam-dev libgtsam-unstable-dev
 mkdir build
 cd build/
 cmake -DBUILD_SHARED_LIBS=ON
+make 
 sudo make install
 ```
