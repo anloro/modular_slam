@@ -43,8 +43,8 @@ anloro::Transform::Transform(Eigen::Affine3f transform)
 
 Eigen::Affine3f anloro::Transform::EulerToAffineTransform(float x, float y, float z, float roll, float pitch, float yaw)
 {
-    Eigen::Matrix3d rot;
-    rot = Eigen::AngleAxisd(roll, Eigen::Vector3d::UnitX()) * Eigen::AngleAxisd(pitch, Eigen::Vector3d::UnitY()) * Eigen::AngleAxisd(yaw, Eigen::Vector3d::UnitZ());
+    Eigen::Matrix3f rot;
+    rot = Eigen::AngleAxisf(roll, Eigen::Vector3f::UnitX()) * Eigen::AngleAxisf(pitch, Eigen::Vector3f::UnitY()) * Eigen::AngleAxisf(yaw, Eigen::Vector3f::UnitZ());
     Eigen::Matrix4f m;
     m << rot(0, 0), rot(0, 1), rot(0, 2), x,
          rot(1, 0), rot(1, 1), rot(1, 2), y,

@@ -1,0 +1,1 @@
+/usr/bin/c++  -O3 -DNDEBUG  -rdynamic CMakeFiles/mainTest.dir/main.cpp.o  -o mainTest  -ltbb -lpthread -lgtsam -lsfml-graphics -lsfml-window -lsfml-system -lgtsam libmodularslam.a -ltbb -lpthread -lsfml-graphics -lsfml-window -lsfml-system -lgtsam 

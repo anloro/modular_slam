@@ -87,6 +87,9 @@ class WorldModelInterface
         // Get the optimized poses from the World model
         std::map<int, Eigen::Affine3f> GetOptimizedPoses();
 
+        // Undo odometry correction call
+        void UndoOdometryCorrection(int lastLoopId, Eigen::Matrix4f uncorrection);
+
         // Optimize the pose-graph
         void Optimize();
 

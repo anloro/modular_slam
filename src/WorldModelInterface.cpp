@@ -199,6 +199,12 @@ std::map<int, Eigen::Affine3f> anloro::WorldModelInterface::GetOptimizedPoses()
     return optimizedPoses;
 }
 
+// Call the UndoOdometryCorrection function
+void anloro::WorldModelInterface::UndoOdometryCorrection(int lastLoopId, Eigen::Matrix4f uncorrection)
+{
+    _worldModel->UndoOdometryCorrection(lastLoopId, uncorrection);
+}
+
 // Call the optimizer for the World model
 void anloro::WorldModelInterface::Optimize()
 {

@@ -114,7 +114,7 @@ void anloro::WorldModel::AddKeyFrameEntity(int id, KeyFrame<int> *keyFrame)
 {
     _keyFramesMap.insert(KeyFramePair(id, keyFrame));
     // Add to the render window
-    InsertKeyFrameToPlot(keyFrame);
+    UpdateCompletePlot();
 }
 
 // ---------------------------------------------------------
@@ -159,8 +159,8 @@ void anloro::WorldModel::Optimize()
         transform = iter->second->GetTransform();
 
         iter->second->GetEulerVariances(sigmaX, sigmaY, sigmaZ, sigmaRoll, sigmaPitch, sigmaYaw);
-        auto noiseModel = noiseModel::Diagonal::Sigmas((Vector(6) << sigmaX, sigmaY, sigmaZ, sigmaRoll, sigmaPitch, sigmaYaw).finished());
-        Pose3 newMean = Pose3(transform.ToMatrix4f().cast<double>());
+        auto noiseModel = noiseModel::Diagonal::Variances((Vector(6) << sigmaX, sigmaY, sigmaZ, sigmaRoll, sigmaPitch, sigmaYaw).finished());
+        Pose3 newMean = Pose3(transform.ToMatrix4f().cast<double>()); // Pose3 needs a double datatype
 
         graph.emplace_shared<BetweenFactor<Pose3>>(idFrom, idTo, newMean, noiseModel);
     }
@@ -170,7 +170,7 @@ void anloro::WorldModel::Optimize()
     {
         NodeId = iter->first;
         transform = iter->second->GetTransform();
-        Pose3 newPose = Pose3(transform.ToMatrix4f().cast<double>());
+        Pose3 newPose = Pose3(transform.ToMatrix4f().cast<double>()); // Pose3 needs a double datatype
         initialEstimate.insert(NodeId, newPose);
     }
 
