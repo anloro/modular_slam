@@ -38,6 +38,7 @@ sudo make install
 ## Bibliography
 rtabmap  
 rtabmap-ros  
+apriltag models: https://github.com/koide3/gazebo_apriltag  
 
 ### Additional packages used during testing
 

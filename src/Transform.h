@@ -22,6 +22,8 @@ public:
               float r31, float r32, float r33, float o34);
     Transform(Eigen::Matrix4f matrix);
     Transform(Eigen::Affine3f transform);
+    // Using quaternions
+    Transform(float x, float y, float z, float qx, float qy, float qz, float qw);
     // The compiler takes care of the default constructor
     Transform() = default;
 

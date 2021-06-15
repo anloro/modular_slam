@@ -41,6 +41,20 @@ anloro::Transform::Transform(Eigen::Affine3f transform)
     _affine = transform;
 }
 
+anloro::Transform::Transform(float x, float y, float z, float qx, float qy, float qz, float qw)
+{
+	Eigen::Matrix3f rotation = Eigen::Quaternionf(qw, qx, qy, qz).normalized().toRotationMatrix();
+    Eigen::Matrix4f m;
+    m << rotation(0,0), rotation(0,1), rotation(0,2), x,
+         rotation(1,0), rotation(1,1), rotation(1,2), y,
+         rotation(2,0), rotation(2,1), rotation(2,2), z,
+         0, 0, 0, 1;
+
+    Eigen::Affine3f transform = Eigen::Affine3f(m);
+
+    _affine = transform;
+}
+
 Eigen::Affine3f anloro::Transform::EulerToAffineTransform(float x, float y, float z, float roll, float pitch, float yaw)
 {
     Eigen::Matrix3f rot;
