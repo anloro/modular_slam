@@ -216,6 +216,46 @@ void anloro::WorldModel::Optimize()
     UpdateCompletePlot();
 }
 
+// Return the optimized poses map
+std::map<int, Eigen::Affine3f> anloro::WorldModel::GetOptimizedPoses()
+{
+    int nodeId, frontEndId;
+    Transform transform;
+    std::map<int, Eigen::Affine3f> optimizedPoses;
+    typedef std::pair<int, Eigen::Affine3f> optimizedPose;
+
+    // Iterate over the KeyFrame's map
+    for (std::map<int, KeyFrame<int> *>::const_iterator iter = _keyFramesMap.begin(); iter != _keyFramesMap.end(); ++iter)
+    {
+        // Get the information of each node
+        nodeId = iter->first;
+        transform = iter->second->GetTransform();
+        // frontEndId = GetIdFromInternalMap(nodeId);
+
+        optimizedPoses.insert(optimizedPose(nodeId, transform.GetAffineTransform()));
+    }
+
+    return optimizedPoses;
+}
+
+void anloro::WorldModel::UndoOdometryCorrection(int lastLoopId, Eigen::Matrix4f uncorrection)
+{
+    // int truid = InternalMapId(lastLoopId);
+    Transform transform, newTransform;
+    Eigen::Matrix4f uncorrected;
+
+    // Iterate over the KeyFrame's map
+    for (std::map<int, KeyFrame<int> *>::const_iterator iter = _keyFramesMap.begin(); iter->first != lastLoopId; ++iter)
+    {
+        transform = iter->second->GetTransform();
+        uncorrected = uncorrection * transform.ToMatrix4f();
+        newTransform = Transform(uncorrected);
+
+        iter->second->SetTransform(newTransform);
+    }
+}
+
+
 void anloro::WorldModel::SavePosesRaw()
 {
     // Create and open a text file

@@ -50,7 +50,7 @@ int anloro::WorldModelInterface::GetIdFromInternalMap(int id)
     {
         // ID not found!
         std::cout << "WARNING: ID " << id << " not found!" << std::endl;
-        return id;
+        return -1;
     }
     else
     {
@@ -237,13 +237,31 @@ std::map<int, Eigen::Affine3f> anloro::WorldModelInterface::GetOptimizedPoses()
     std::map<int, Eigen::Affine3f> optimizedPoses;
     optimizedPoses = _worldModel->GetOptimizedPoses();
     
-    return optimizedPoses;
+    int nodeId, frontEndId;
+    std::map<int, Eigen::Affine3f> mappedOptimizedPoses;
+    typedef std::pair<int, Eigen::Affine3f> optimizedPose;
+
+    // Iterate over the KeyFrame's map
+    for (std::map<int, Eigen::Affine3f>::const_iterator iter = optimizedPoses.begin(); iter != optimizedPoses.end(); ++iter)
+    {
+        // Get the information of each node
+        nodeId = iter->first;
+        frontEndId = GetIdFromInternalMap(nodeId);
+
+        // Check if the ID corresponds to a node from this Front-End
+        if (frontEndId > 0)
+        {
+            mappedOptimizedPoses.insert(optimizedPose(frontEndId, iter->second));
+        }
+    }
+
+    return mappedOptimizedPoses;
 }
 
 // Call the UndoOdometryCorrection function
 void anloro::WorldModelInterface::UndoOdometryCorrection(int lastLoopId, Eigen::Matrix4f uncorrection)
 {
-    int id = GetIdFromInternalMap(lastLoopId);
+    int id = InternalMapId(lastLoopId);
     _worldModel->UndoOdometryCorrection(id, uncorrection);
 }
 
