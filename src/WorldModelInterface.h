@@ -22,6 +22,9 @@ class WorldModelInterface
         WorldModelInterface(std::string id);
 
         // MEMBER FUNCTIONS
+        // Front-end utilities
+        int InternalMapId(int id);
+        int GetIdFromInternalMap(int id);
         // Add a reference frame
         void AddRefFrame(float x, float y, float z, float roll, float pitch, float yaw);
 
@@ -99,6 +102,12 @@ class WorldModelInterface
     protected: 
         WorldModel *_worldModel;
         std::string _uniqueID;
+
+        // INTERFACE META DATA
+        // Map the front-end id into the modular_slam framework id
+        std::map<int, int> _frontEndToModular;
+        // Map this framework id into the front-end id
+        std::map<int, int> _modularToFrontEnd;
 };
 
 

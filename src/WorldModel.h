@@ -49,9 +49,6 @@ class WorldModel
         // MEMBER FUNCTIONS
         // Public static function returning a reference to the singleton class:
         static WorldModel *GetInstance();
-        // Front-end utilities
-        int InternalMapId(int id);
-        int GetIdFromInternalMap(int id);
         // Entity creation
         void AddRefFrameEntity(RefFrame * refFrame);
         void AddKeyFrameEntity(int nodeId, KeyFrame<int> * keyFrame);
@@ -81,15 +78,12 @@ class WorldModel
         KeyFramesMap _keyFramesMap;
         PoseFactorsMap _poseFactorsMap;
 
-        // RTABMAP'S INTERFACE DATA
-        // Map Rtab-Map id into this framework id
-        std::map<int, int> _rtabToModular;
-        // Map this framework id into Rtab-Map id
-        std::map<int, int> _modularToRtab;
-
         // Plotting thread
         std::thread * _plotterThread;
         WorldModelPlotter _plotter;
+    
+    public:
+        static int currentNodeId;
 };
 
 

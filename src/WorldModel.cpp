@@ -34,7 +34,9 @@
 using namespace gtsam;
 using namespace anloro;
 
+
 WorldModel *WorldModel::worldModel_ = nullptr;
+int anloro::WorldModel::currentNodeId = 0;
 
 anloro::WorldModel::WorldModel()
 {
@@ -54,48 +56,6 @@ WorldModel *WorldModel::GetInstance()
     //                              // for every subsequent calls to the function.
     // return instance;
 };
-
-// ---------------------------------------------------------
-// --------- Utilities for Front-end interaction -----------
-// ---------------------------------------------------------
-
-// Map the input ID into our own internal IDs
-int anloro::WorldModel::InternalMapId(int id)
-{
-    // TO-DO: Add a time check to comapre between ids of different front-ends!
-
-    static int count = 0; // initialized only once across all calls
-    // Keep track of the maps
-    if (_rtabToModular.count(id) == 0)
-    {
-        // ID not found, so add it
-        _rtabToModular.insert(std::make_pair(id, count));
-        _modularToRtab.insert(std::make_pair(count, id));
-        return count++;
-    }
-    else
-    {
-        // ID found
-        return _rtabToModular[id];
-    }
-}
-
-// Recover original ID from internal IDs
-int anloro::WorldModel::GetIdFromInternalMap(int id)
-{
-    // Check for the ID
-    if (_modularToRtab.count(id) == 0)
-    {
-        // ID not found!
-        std::cout << "WARNING: ID " << id << " not found!" << std::endl;
-        return id;
-    }
-    else
-    {
-        // ID found
-        return _modularToRtab[id];
-    }
-}
 
 // ---------------------------------------------------------
 // ------------- Entity creation definitions ---------------
@@ -255,46 +215,6 @@ void anloro::WorldModel::Optimize()
 
     UpdateCompletePlot();
 }
-
-// Return the optimized poses map
-std::map<int, Eigen::Affine3f> anloro::WorldModel::GetOptimizedPoses()
-{
-    int nodeId, rtabmapId;
-    Transform transform;
-    std::map<int, Eigen::Affine3f> optimizedPoses;
-    typedef std::pair<int, Eigen::Affine3f> optimizedPose;
-
-    // Iterate over the KeyFrame's map
-    for (std::map<int, KeyFrame<int> *>::const_iterator iter = _keyFramesMap.begin(); iter != _keyFramesMap.end(); ++iter)
-    {
-        // Get the information of each node
-        nodeId = iter->first;
-        transform = iter->second->GetTransform();
-        rtabmapId = GetIdFromInternalMap(nodeId);
-
-        optimizedPoses.insert(optimizedPose(rtabmapId, transform.GetAffineTransform()));
-    }
-
-    return optimizedPoses;
-}
-
-void anloro::WorldModel::UndoOdometryCorrection(int lastLoopId, Eigen::Matrix4f uncorrection)
-{
-    int truid = InternalMapId(lastLoopId);
-    Transform transform, newTransform;
-    Eigen::Matrix4f uncorrected;
-
-    // Iterate over the KeyFrame's map
-    for (std::map<int, KeyFrame<int> *>::const_iterator iter = _keyFramesMap.begin(); iter->first != truid; ++iter)
-    {
-        transform = iter->second->GetTransform();
-        uncorrected = uncorrection * transform.ToMatrix4f();
-        newTransform = Transform(uncorrected);
-
-        iter->second->SetTransform(newTransform);
-    }
-}
-
 
 void anloro::WorldModel::SavePosesRaw()
 {

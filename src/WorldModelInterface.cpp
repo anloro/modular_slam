@@ -19,6 +19,47 @@ anloro::WorldModelInterface::WorldModelInterface(std::string id)
 }
 
 // ---------------------------------------------------------
+// --------- Utilities for Front-end interaction -----------
+// ---------------------------------------------------------
+
+// Map the input ID into our own internal IDs
+int anloro::WorldModelInterface::InternalMapId(int id)
+{
+    // TO-DO: Add a time check to comapre between ids of different front-ends!
+
+    // Check if the ID is already registered in the WorldModel
+    if (_frontEndToModular.count(id) == 0)
+    {
+        // ID not found, so add it
+        _frontEndToModular.insert(std::make_pair(id, WorldModel::currentNodeId));
+        _modularToFrontEnd.insert(std::make_pair(WorldModel::currentNodeId, id));
+        return WorldModel::currentNodeId++;
+    }
+    else
+    {
+        // ID found
+        return _frontEndToModular[id];
+    }
+}
+
+// Recover original ID from internal IDs
+int anloro::WorldModelInterface::GetIdFromInternalMap(int id)
+{
+    // Check for the ID
+    if (_modularToFrontEnd.count(id) == 0)
+    {
+        // ID not found!
+        std::cout << "WARNING: ID " << id << " not found!" << std::endl;
+        return id;
+    }
+    else
+    {
+        // ID found
+        return _modularToFrontEnd[id];
+    }
+}
+
+// ---------------------------------------------------------
 // ------------ Front-end interface functions --------------
 // ---------------------------------------------------------
 
@@ -93,7 +134,7 @@ void anloro::WorldModelInterface::AddKeyFrame(int id, Transform transform)
 {
     int internalId;
     int dummyData = 0;
-    internalId = _worldModel->InternalMapId(id);
+    internalId = InternalMapId(id);
 
     KeyFrame<int> *node = new KeyFrame<int>(transform, dummyData);
     _worldModel->AddKeyFrameEntity(internalId, node);
@@ -172,8 +213,8 @@ void anloro::WorldModelInterface::AddPoseConstraint(int fromNode, int toNode,
                                                     float sigmaRoll, float sigmaPitch, float sigmaYaw)
 {
     int internalFrom, internalTo;
-    internalFrom = _worldModel->InternalMapId(fromNode);
-    internalTo = _worldModel->InternalMapId(toNode);
+    internalFrom = InternalMapId(fromNode);
+    internalTo = InternalMapId(toNode);
 
     PoseFactor *poseFactor = new PoseFactor(internalFrom, internalTo,
                                             transform,
@@ -202,7 +243,8 @@ std::map<int, Eigen::Affine3f> anloro::WorldModelInterface::GetOptimizedPoses()
 // Call the UndoOdometryCorrection function
 void anloro::WorldModelInterface::UndoOdometryCorrection(int lastLoopId, Eigen::Matrix4f uncorrection)
 {
-    _worldModel->UndoOdometryCorrection(lastLoopId, uncorrection);
+    int id = GetIdFromInternalMap(lastLoopId);
+    _worldModel->UndoOdometryCorrection(id, uncorrection);
 }
 
 // Call the optimizer for the World model
