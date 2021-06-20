@@ -23,30 +23,40 @@ anloro::WorldModelInterface::WorldModelInterface(std::string id)
 // ---------------------------------------------------------
 
 // Map the input ID into our own internal IDs
-int anloro::WorldModelInterface::InternalMapId(int id)
+int anloro::WorldModelInterface::NodeInternalMapId(int id)
 {
     // TO-DO: Add a time check to comapre between ids of different front-ends!
+    
+    std::cout << "The input id is: " << id << " with a count of " << _frontEndToModular_node.count(id) << std::endl;
+
 
     // Check if the ID is already registered in the WorldModel
-    if (_frontEndToModular.count(id) == 0)
+    if (_frontEndToModular_node.count(id) == 0)
     {
-        // ID not found, so add it
-        _frontEndToModular.insert(std::make_pair(id, WorldModel::currentNodeId));
-        _modularToFrontEnd.insert(std::make_pair(WorldModel::currentNodeId, id));
-        return WorldModel::currentNodeId++;
+        // ID not found, increase node count
+        std::cout << "The current node id is: " << _worldModel->currentNodeId << std::endl;
+
+        _worldModel->currentNodeId++;
+
+        std::cout << "And now is: " << _worldModel->currentNodeId << std::endl;
+
+        // And add it
+        _frontEndToModular_node.insert(std::make_pair(id, _worldModel->currentNodeId));
+        _modularToFrontEnd_node.insert(std::make_pair(_worldModel->currentNodeId, id));
+        return _worldModel->currentNodeId;
     }
     else
     {
         // ID found
-        return _frontEndToModular[id];
+        return _frontEndToModular_node[id];
     }
 }
 
 // Recover original ID from internal IDs
-int anloro::WorldModelInterface::GetIdFromInternalMap(int id)
+int anloro::WorldModelInterface::GetNodeIdFromInternalMap(int id)
 {
     // Check for the ID
-    if (_modularToFrontEnd.count(id) == 0)
+    if (_modularToFrontEnd_node.count(id) == 0)
     {
         // ID not found!
         std::cout << "WARNING: ID " << id << " not found!" << std::endl;
@@ -55,7 +65,44 @@ int anloro::WorldModelInterface::GetIdFromInternalMap(int id)
     else
     {
         // ID found
-        return _modularToFrontEnd[id];
+        return _modularToFrontEnd_node[id];
+    }
+}
+
+// Map the input ID into our own internal IDs
+int anloro::WorldModelInterface::LandMarkInternalMapId(int id)
+{
+    // Check if the ID is already registered in the WorldModel
+    if (_frontEndToModular_lm.count(id) == 0)
+    {
+        // ID not found, increase LandMark count
+        _worldModel->currentLandMarkId++;
+        // And add it
+        _frontEndToModular_lm.insert(std::make_pair(id, _worldModel->currentLandMarkId));
+        _modularToFrontEnd_lm.insert(std::make_pair(_worldModel->currentLandMarkId, id));
+        return _worldModel->currentLandMarkId;
+    }
+    else
+    {
+        // ID found
+        return _frontEndToModular_lm[id];
+    }
+}
+
+// Recover original ID from internal IDs
+int anloro::WorldModelInterface::GetLandMarkIdFromInternalMap(int id)
+{
+    // Check for the ID
+    if (_modularToFrontEnd_lm.count(id) == 0)
+    {
+        // ID not found!
+        // std::cout << "WARNING: ID " << id << " not found!" << std::endl;
+        return -1;
+    }
+    else
+    {
+        // ID found
+        return _modularToFrontEnd_lm[id];
     }
 }
 
@@ -134,10 +181,54 @@ void anloro::WorldModelInterface::AddKeyFrame(int id, Transform transform)
 {
     int internalId;
     int dummyData = 0;
-    internalId = InternalMapId(id);
+    internalId = NodeInternalMapId(id);
 
     KeyFrame<int> *node = new KeyFrame<int>(transform, dummyData);
     _worldModel->AddKeyFrameEntity(internalId, node);
+}
+
+// Add a landmark
+void anloro::WorldModelInterface::AddLandMark(int landMarkId, Transform transform,
+                                              float sigmaX, float sigmaY, float sigmaZ, float sigmaRoll, float sigmaPitch, float sigmaYaw)
+{
+    int nodeId = _worldModel->currentNodeId;
+
+    // Only consider a landMark if we have odometry
+    if(nodeId > 0)
+    {
+        // Check if the LandMark wasn't previously seen
+        if (_frontEndToModular_lm.count(landMarkId) == 0)
+        {
+            // Get an internal ID for the new landmark
+            int internalLandMarkId = LandMarkInternalMapId(landMarkId);
+
+            LandMark *landmark = new LandMark(nodeId, transform,
+                                            sigmaX, sigmaY, sigmaZ, sigmaRoll, sigmaPitch, sigmaYaw);
+            _worldModel->AddLandMarkEntity(internalLandMarkId, landmark);
+
+            std::cout << "Created landmark with id "<< landMarkId << " percieved in node " << nodeId << "!" << std::endl;
+
+        }else{
+            // Get the internal ID of the stored landmark
+            int internalLandMarkId = LandMarkInternalMapId(landMarkId);
+            // And retrive its pointer from the worldmodel
+            LandMark *landmark = _worldModel->GetLandMarkEntity(internalLandMarkId);
+
+            // Check if the landmark was seen from an already registered node
+            if(landmark->ExistsNode(nodeId)){
+                // The robot is probably not moving
+                std::cout << "Node "<< nodeId << " already registered in landMark " << landMarkId << "!" << std::endl;
+            }else{
+                landmark->AddNode(nodeId, transform,
+                                sigmaX, sigmaY, sigmaZ, sigmaRoll, sigmaPitch, sigmaYaw);
+                std::cout << "Added node "<< nodeId << " to landMark " << landMarkId << "!" << std::endl;
+
+                // Optimize after recognizing the same landmark in another node
+                _worldModel->Optimize();
+            }
+        }
+    }
+
 }
 
 // Add an SE(3) constraint to the World model
@@ -213,8 +304,11 @@ void anloro::WorldModelInterface::AddPoseConstraint(int fromNode, int toNode,
                                                     float sigmaRoll, float sigmaPitch, float sigmaYaw)
 {
     int internalFrom, internalTo;
-    internalFrom = InternalMapId(fromNode);
-    internalTo = InternalMapId(toNode);
+    internalFrom = NodeInternalMapId(fromNode);
+    internalTo = NodeInternalMapId(toNode);
+
+    std::cout << "Pose constraint from id: " << fromNode << " with internal id " << internalFrom << std::endl;
+    std::cout << "To id: " << toNode << " with internal id " << internalTo << std::endl;
 
     PoseFactor *poseFactor = new PoseFactor(internalFrom, internalTo,
                                             transform,
@@ -246,7 +340,7 @@ std::map<int, Eigen::Affine3f> anloro::WorldModelInterface::GetOptimizedPoses()
     {
         // Get the information of each node
         nodeId = iter->first;
-        frontEndId = GetIdFromInternalMap(nodeId);
+        frontEndId = GetNodeIdFromInternalMap(nodeId);
 
         // Check if the ID corresponds to a node from this Front-End
         if (frontEndId > 0)
@@ -261,7 +355,7 @@ std::map<int, Eigen::Affine3f> anloro::WorldModelInterface::GetOptimizedPoses()
 // Call the UndoOdometryCorrection function
 void anloro::WorldModelInterface::UndoOdometryCorrection(int lastLoopId, Eigen::Matrix4f uncorrection)
 {
-    int id = InternalMapId(lastLoopId);
+    int id = NodeInternalMapId(lastLoopId);
     _worldModel->UndoOdometryCorrection(id, uncorrection);
 }
 

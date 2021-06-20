@@ -23,10 +23,12 @@
 #include <gtsam/geometry/Pose3.h>
 #include <gtsam/geometry/Rot3.h>
 #include <gtsam/geometry/Pose2.h>
+#include <gtsam/sam/BearingRangeFactor.h>
 
 #include <iostream>
 #include <chrono>
 #include <fstream>
+#include <math.h>
 
 #include <boost/pointer_cast.hpp>
 #include <boost/shared_ptr.hpp>
@@ -36,7 +38,8 @@ using namespace anloro;
 
 
 WorldModel *WorldModel::worldModel_ = nullptr;
-int anloro::WorldModel::currentNodeId = 0;
+// int anloro::WorldModel::currentNodeId = -1;
+// int anloro::WorldModel::currentLandMarkId = -1;
 
 anloro::WorldModel::WorldModel()
 {
@@ -77,6 +80,18 @@ void anloro::WorldModel::AddKeyFrameEntity(int id, KeyFrame<int> *keyFrame)
     UpdateCompletePlot();
 }
 
+// Add a Landmark Entity to the graph
+void anloro::WorldModel::AddLandMarkEntity(int id, LandMark *LandMark)
+{
+    _landMarksMap.insert(LandMarkPair(id, LandMark));
+}
+
+// Get an existing LandMark pointer from the map
+LandMark* anloro::WorldModel::GetLandMarkEntity(int id)
+{
+    return _landMarksMap[id];
+}
+
 // ---------------------------------------------------------
 // ------------- Factor creation definitions ---------------
 // ---------------------------------------------------------
@@ -108,7 +123,7 @@ void anloro::WorldModel::Optimize()
     graph.addPrior(initId, priorPose, priorNoise);
 
     Transform transform;
-    int idFrom, idTo, NodeId;
+    int idFrom, idTo, NodeId, landMarkId;
 
     // Add the Pose3 factors
     float sigmaX, sigmaY, sigmaZ, sigmaRoll, sigmaPitch, sigmaYaw;
@@ -134,6 +149,76 @@ void anloro::WorldModel::Optimize()
         initialEstimate.insert(NodeId, newPose);
     }
 
+    // Add the landmarks
+    float x, y, z, dummyVar;
+    int nodeId;
+    for (std::map<int, LandMark*>::const_iterator iteri = _landMarksMap.begin(); iteri != _landMarksMap.end(); ++iteri)
+    {
+        landMarkId = iteri->first;
+        Symbol landMarkKey('l', landMarkId);
+
+        LandMark::RelatedNodesMap relatedNodes = iteri->second->GetRelatedNodes();
+
+        for (LandMark::RelatedNodesMap::const_iterator iterj = relatedNodes.begin(); iterj != relatedNodes.end(); ++iterj)
+        {
+            nodeId = iterj->first;
+            transform = std::get<0>(iterj->second);
+            LandMark::Uncertainty unc = std::get<1>(iterj->second);
+            sigmaX = unc[0];
+            sigmaY = unc[1];
+            sigmaZ = unc[2];
+            sigmaRoll = unc[3];
+            sigmaPitch = unc[4];
+            sigmaYaw = unc[5];
+
+            // auto measurementNoise = noiseModel::Diagonal::Variances((Vector(6) << sigmaX, sigmaY, sigmaZ, sigmaRoll, sigmaPitch, sigmaYaw).finished());
+            // auto measurementNoise = noiseModel::Diagonal::Variances((Vector(3) << sigmaX, sigmaY, sigmaZ).finished());
+            auto measurementNoise = noiseModel::Diagonal::Variances((Vector(3) << 0.2, 0.2, 0.2).finished());
+            
+            // Add transform as a Pose3 BetweenFactor
+            // Pose3 newMean = Pose3(transform.ToMatrix4f().cast<double>()); // Pose3 needs a double datatype
+            // graph.emplace_shared<BetweenFactor<Pose3>>(nodeId, landMarkKey, newMean, measurementNoise);
+
+            // Add transform as a Point3 BetweenFactor
+            // transform.GetTranslationalAndEulerAngles(x, y, z, dummyVar, dummyVar, dummyVar);
+            // Point3 pLandMark = Point3(x, y, z);
+            // graph.emplace_shared<BetweenFactor<Point3>>(nodeId, landMarkKey, pLandMark, measurementNoise);
+
+            // Add transform as a bearing range factor
+            // Let's convert the point into polar coordinates for GTSAM 
+            transform.GetTranslationalAndEulerAngles(x, y, z, dummyVar, dummyVar, dummyVar);
+            float range = std::sqrt(x*x + y*y + z*z);
+            // float theta = atan(y/x);
+            // float sigma = atan(std::sqrt(x*x + y*y)/z);
+            // Eigen::Matrix3f rot;
+            // rot = Eigen::AngleAxisf(0.0, Eigen::Vector3f::UnitX()) * Eigen::AngleAxisf(theta, Eigen::Vector3f::UnitY()) * Eigen::AngleAxisf(sigma, Eigen::Vector3f::UnitZ());
+            // Rot3 rot3 = Rot3(rot.cast<double>());
+            Unit3 u3 = Unit3(x, y, z);
+            graph.emplace_shared<BearingRangeFactor<Pose3, Point3> >(nodeId, landMarkKey, u3, range, measurementNoise);
+
+        }
+
+        // Add the initial estimate as the last node registered (should it be used the mean?)
+        // As a Pose3 
+        // Eigen::Matrix4f lm_abs_coord = _keyFramesMap.at(nodeId)->GetTransform().ToMatrix4f() * transform.ToMatrix4f();
+        // Pose3 newMean_abs_coord = Pose3(lm_abs_coord.cast<double>());
+        // initialEstimate.insert(landMarkKey, newMean_abs_coord);
+        // As a Point3
+        // Transform lm_abs_coord = Transform(_keyFramesMap.at(nodeId)->GetTransform().ToMatrix4f() * transform.ToMatrix4f());
+        // lm_abs_coord.GetTranslationalAndEulerAngles(x, y, z, dummyVar, dummyVar, dummyVar);
+        
+        // The initial estimate is in absolute coordinates (map coordinate frame) 
+        // this is computed by using the transform of the last visited node from which
+        // the landmark was detected (may be better to use the mean of every node in which it was detected)
+        float nodeX, nodeY, nodeZ;
+        _keyFramesMap.at(nodeId)->GetTransform().GetTranslationalAndEulerAngles(nodeX, nodeY, nodeZ, dummyVar, dummyVar, dummyVar);
+        Point3 pLandMark_abs_coord = Point3(nodeX + x, nodeY + y, nodeZ + z);
+        initialEstimate.insert(landMarkKey, pLandMark_abs_coord);
+
+    }
+
+    graph.print();
+    initialEstimate.print();
 
     // GaussNewtonParams parameters;
     LevenbergMarquardtParams parameters;
@@ -194,16 +279,15 @@ void anloro::WorldModel::Optimize()
          iter.first != optimizer.values().end() && iter.second != _keyFramesMap.end();
          ++iter.first, ++iter.second)
     {
-        // Get the optimized poses from the optimizer
-        Pose3 optimizedPose = iter.first->value.cast<Pose3>();
-        Eigen::Matrix4f matrix = optimizedPose.matrix().cast<float>();
-        Transform transform = Transform(matrix);
-
         // Check if the iterator is in the same node.
         graphKey = (int)iter.first->key;
         worldKey = iter.second->first;
         if (graphKey == worldKey)
         {
+            // Get the optimized poses from the optimizer
+            Pose3 optimizedPose = iter.first->value.cast<Pose3>();
+            Eigen::Matrix4f matrix = optimizedPose.matrix().cast<float>();
+            Transform transform = Transform(matrix);
             // Update the World Model with the optimized poses
             iter.second->second->SetTransform(transform);
         }

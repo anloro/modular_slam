@@ -55,14 +55,16 @@ anloro::Transform::Transform(float x, float y, float z, float qx, float qy, floa
     _affine = transform;
 }
 
+// The input (roll, pitch, yaw) must be in radians!
 Eigen::Affine3f anloro::Transform::EulerToAffineTransform(float x, float y, float z, float roll, float pitch, float yaw)
 {
     Eigen::Matrix3f rot;
     rot = Eigen::AngleAxisf(roll, Eigen::Vector3f::UnitX()) * Eigen::AngleAxisf(pitch, Eigen::Vector3f::UnitY()) * Eigen::AngleAxisf(yaw, Eigen::Vector3f::UnitZ());
+	Eigen::Matrix3f rotation = Eigen::Quaternionf(rot).normalized().toRotationMatrix();
     Eigen::Matrix4f m;
-    m << rot(0, 0), rot(0, 1), rot(0, 2), x,
-         rot(1, 0), rot(1, 1), rot(1, 2), y,
-         rot(2, 0), rot(2, 1), rot(2, 2), z,
+    m << rotation(0, 0), rotation(0, 1), rotation(0, 2), x,
+         rotation(1, 0), rotation(1, 1), rotation(1, 2), y,
+         rotation(2, 0), rotation(2, 1), rotation(2, 2), z,
          0, 0, 0, 1;
 
     Eigen::Affine3f transform = Eigen::Affine3f(m);
@@ -96,4 +98,17 @@ void anloro::Transform::GetTranslationalAndEulerAngles(float &x, float &y, float
     roll = atan2f(_affine(2, 1), _affine(2, 2));
     pitch = asinf(-_affine(2, 0));
     yaw = atan2f(_affine(1, 0), _affine(0, 0));
+}
+
+anloro::Transform anloro::Transform::inverse()
+{
+	bool invertible = false;
+	Eigen::Matrix4f inverse;
+	Eigen::Matrix4f::RealScalar det;
+	Transform(_affine).ToMatrix4f().computeInverseAndDetWithCheck(inverse, det, invertible);
+	if(!invertible){
+        std::cout << "WARNING! The Transform is not invertible!" << std::endl;
+    }
+
+	return Transform(inverse);
 }

@@ -6,33 +6,31 @@
  */
 
 #include "LandMark.h"
-#include <tuple>
 
-LandMark::LandMark(float x, float y, float z)
+
+anloro::LandMark::LandMark(int nodeId, Transform t,
+                           float sigmaX, float sigmaY, float sigmaZ, float sigmaRoll, float sigmaPitch, float sigmaYaw)
 {
-    LandMark::_x = x;
-    LandMark::_y = y;
-    LandMark::_z = z;
+    AddNode(nodeId, t, sigmaX, sigmaY, sigmaZ, sigmaRoll, sigmaPitch, sigmaYaw);
 }
 
-void LandMark::SetTranslationalVector(float x, float y, float z)
+void anloro::LandMark::AddNode(int nodeId, Transform t,
+                               float sigmaX, float sigmaY, float sigmaZ, float sigmaRoll, float sigmaPitch, float sigmaYaw)
 {
-    LandMark::_x = x;
-    LandMark::_y = y;
-    LandMark::_z = z;
+    Uncertainty unc{sigmaX, sigmaY, sigmaZ, sigmaRoll, sigmaPitch, sigmaYaw};
+    LandMarkData lm(t, unc);
+    _relatedNodes.insert(RelatedNodesPair(nodeId, lm));
 }
 
-std::tuple<float, float, float> LandMark::GetTranslationalVector()
+bool anloro::LandMark::ExistsNode(int nodeId)
 {
-    return std::tuple<float, float, float>{_x, _y, _z};
+    // Check if the nodeID is already registered in this landmark
+    if (_relatedNodes.count(nodeId) == 0){
+        // ID not found
+        return false;
+    }
+    else{
+        // ID found
+        return true;
+    }
 }
-
-// int main(){
-//     LandMark newLM = LandMark(0, 0, 0);
-//     std::tuple tLM = newLM.GetTranslationalVector();
-//     float xLM = std::get<0>(tLM);
-//     float yLM = std::get<1>(tLM);
-//     float zLM = std::get<2>(tLM);
-//     std::cout << "My LM translational vector: (" << xLM << ", " << yLM << ", " << zLM << ")" << std::endl;
-//     return 0;
-// }

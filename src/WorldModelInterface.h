@@ -23,8 +23,10 @@ class WorldModelInterface
 
         // MEMBER FUNCTIONS
         // Front-end utilities
-        int InternalMapId(int id);
-        int GetIdFromInternalMap(int id);
+        int NodeInternalMapId(int id);
+        int GetNodeIdFromInternalMap(int id);
+        int LandMarkInternalMapId(int id);
+        int GetLandMarkIdFromInternalMap(int id);
         // Add a reference frame
         void AddRefFrame(float x, float y, float z, float roll, float pitch, float yaw);
 
@@ -51,6 +53,10 @@ class WorldModelInterface
         void AddKeyFrame(int id, Eigen::Affine3f affineT);
 
         void AddKeyFrame(int id, Transform transform);
+
+        // Add a landmark
+        void AddLandMark(int landMarkId, Transform transform,
+                         float sigmaX, float sigmaY, float sigmaZ, float sigmaRoll, float sigmaPitch, float sigmaYaw);
 
         // Add a pose constraint
         void AddPoseConstraint(int fromNode, int toNode, 
@@ -104,10 +110,13 @@ class WorldModelInterface
         std::string _uniqueID;
 
         // INTERFACE META DATA
-        // Map the front-end id into the modular_slam framework id
-        std::map<int, int> _frontEndToModular;
-        // Map this framework id into the front-end id
-        std::map<int, int> _modularToFrontEnd;
+        // Map the front-end node id into the modular_slam framework node id
+        std::map<int, int> _frontEndToModular_node;
+        // Map this framework node id into the front-end node id
+        std::map<int, int> _modularToFrontEnd_node;
+        // Same for landmarks
+        std::map<int, int> _frontEndToModular_lm;
+        std::map<int, int> _modularToFrontEnd_lm;
 };
 
 

@@ -7,26 +7,40 @@
 
 #include <tuple>
 #include <iostream>
+#include <map>
+#include <array>
 
-// class mySerializableEntity{};
+#include "Transform.h"
 
-// Entity::Entity(){}
-// I will have to mofify this to have an id to the node it is related to,
-//  it has to inherit from refence frame class and allow storing features 
-//  and also we have to make it to work with gtsam as an extra constraint.
-// Or maybe put it directly as a field in a keyframe.
+
+namespace anloro{
+
 class LandMark
 {
 public:
     // Constructors
-    LandMark(float x, float y, float z);
+    LandMark(int nodeId, Transform t,
+             float sigmaX, float sigmaY, float sigmaZ, float sigmaRoll, float sigmaPitch, float sigmaYaw);
     // The compiler takes care of the default constructor
     LandMark() = default;
 
     // Member functions
-    void SetTranslationalVector(float x, float y, float z);
-    std::tuple<float, float, float> GetTranslationalVector();
+    void AddNode(int nodeId, Transform t,
+                 float sigmaX, float sigmaY, float sigmaZ, float sigmaRoll, float sigmaPitch, float sigmaYaw);
+    bool ExistsNode(int nodeId);
+
+    typedef std::array<float, 6> Uncertainty; // array with variances x, y, z, roll, pitch, yaw
+    typedef std::pair<Transform, Uncertainty> LandMarkData;
+    typedef std::pair<int, LandMarkData> RelatedNodesPair; // {node ID, LandMark data}
+    typedef std::map<int, LandMarkData> RelatedNodesMap;
+
+    RelatedNodesMap GetRelatedNodes(){return _relatedNodes;};
 
 protected:
-    float _x, _y, _z;
+    // List of the nodes that percieved the landmark {NodeID, Transform}
+    // Note that the Transform must represent the landmark pose relative to the robot frame.
+    RelatedNodesMap _relatedNodes;
+
 };
+
+} // namespace anloro

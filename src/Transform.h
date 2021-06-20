@@ -8,6 +8,7 @@
 #pragma once
 
 #include <Eigen/Geometry>
+#include <iostream>
 
 namespace anloro{
 
@@ -34,6 +35,7 @@ public:
     void SetTranslationalAndEulerAngles(float x, float y, float z, float roll, float pitch, float yaw);
     void GetTranslationalAndEulerAngles(float &x, float &y, float &z, float &roll, float &pitch, float &yaw);
     Eigen::Affine3f GetAffineTransform() {return _affine;};
+    Transform inverse();
 
 protected:
     // Transform _transform;

@@ -9,6 +9,7 @@
 
 // my includes
 #include "KeyFrame.h"
+#include "LandMark.h"
 #include "PoseFactor.h"
 
 #include "WorldModelPlotter.h"
@@ -52,6 +53,8 @@ class WorldModel
         // Entity creation
         void AddRefFrameEntity(RefFrame * refFrame);
         void AddKeyFrameEntity(int nodeId, KeyFrame<int> * keyFrame);
+        void AddLandMarkEntity(int id, LandMark *LandMark);
+        LandMark* GetLandMarkEntity(int id);
         void DeleteKeyFrameEntity(int id);
         void UnregisterKeyFrame(int id);
         void UndoOdometryCorrection(int lastLoopId, Eigen::Matrix4f uncorrection);
@@ -69,21 +72,28 @@ class WorldModel
         typedef std::pair<int, RefFrame*> RefFramePair;
         typedef std::map<int, KeyFrame<int>*> KeyFramesMap;
         typedef std::pair<int, KeyFrame<int>*> KeyFramePair;
+        typedef std::map<int, LandMark*> LandMarksMap;
+        typedef std::pair<int, LandMark*> LandMarkPair;
         typedef std::map<int, PoseFactor*> PoseFactorsMap;
         typedef std::pair<int, PoseFactor*> PoseFactorPair;
 
     protected :
         // MAPS DATA 
-        RefFramesMap _refFramesMap;
-        KeyFramesMap _keyFramesMap;
-        PoseFactorsMap _poseFactorsMap;
+        RefFramesMap _refFramesMap; // {refframeID, RefFrame*}
+        KeyFramesMap _keyFramesMap; // {nodeID, KeyFrame*}
+        LandMarksMap _landMarksMap; // {landmarkID, LandMark*}
+        PoseFactorsMap _poseFactorsMap; // {posefactorID, PoseFactor*}
 
         // Plotting thread
         std::thread * _plotterThread;
         WorldModelPlotter _plotter;
     
     public:
-        static int currentNodeId;
+        // Keeps an internal count of the different entities
+        int currentNodeId = -1;
+        int currentLandMarkId = -1;
+        // static int currentNodeId;
+        // static int currentLandMarkId;
 };
 
 
