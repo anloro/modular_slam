@@ -8,10 +8,9 @@
 #include "LandMark.h"
 
 
-anloro::LandMark::LandMark(int nodeId, Transform t,
-                           float sigmaX, float sigmaY, float sigmaZ, float sigmaRoll, float sigmaPitch, float sigmaYaw)
+anloro::LandMark::LandMark(Transform t)
 {
-    AddNode(nodeId, t, sigmaX, sigmaY, sigmaZ, sigmaRoll, sigmaPitch, sigmaYaw);
+    _initialStimate = t;
 }
 
 void anloro::LandMark::AddNode(int nodeId, Transform t,
@@ -20,6 +19,11 @@ void anloro::LandMark::AddNode(int nodeId, Transform t,
     Uncertainty unc{sigmaX, sigmaY, sigmaZ, sigmaRoll, sigmaPitch, sigmaYaw};
     LandMarkData lm(t, unc);
     _relatedNodes.insert(RelatedNodesPair(nodeId, lm));
+}
+
+void anloro::LandMark::SetInitialEstimate(Transform t)
+{
+    _initialStimate = t;
 }
 
 bool anloro::LandMark::ExistsNode(int nodeId)

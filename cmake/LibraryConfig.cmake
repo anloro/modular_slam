@@ -75,3 +75,9 @@ install(
   DESTINATION "${CONFIG_INSTALL_DIR}"
   NAMESPACE   "${PROJECT_NAME}::"
 )
+
+# Install the custom font
+install(
+    FILES       "${PROJECT_SOURCE_DIR}/lato/Lato-Regular.ttf"
+    DESTINATION "/usr/local/share/fonts"
+)

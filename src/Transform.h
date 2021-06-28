@@ -32,10 +32,19 @@ public:
     Eigen::Affine3f EulerToAffineTransform(float x, float y, float z, float roll, float pitch, float yaw);
     Eigen::Matrix4f ToMatrix4f();
 
+    void SetTranslationalVector(float x, float y, float z);
+    void SetEulerAngles(float roll, float pitch, float yaw);
     void SetTranslationalAndEulerAngles(float x, float y, float z, float roll, float pitch, float yaw);
+    void GetTranslationalVector(float &x, float &y, float &z);
+    void GetEulerAngles(float &roll, float &pitch, float &yaw);
     void GetTranslationalAndEulerAngles(float &x, float &y, float &z, float &roll, float &pitch, float &yaw);
+    float X();
+    float Y();
+    float Z();
     Eigen::Affine3f GetAffineTransform() {return _affine;};
     Transform inverse();
+    Transform operator*(Transform t) const;
+    Transform Clone();
 
 protected:
     // Transform _transform;

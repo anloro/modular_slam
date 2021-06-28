@@ -28,6 +28,7 @@
 
 #include <iostream>
 #include <chrono>
+#include <string>
 
 
 namespace anloro{
@@ -57,6 +58,7 @@ class WorldModel
         LandMark* GetLandMarkEntity(int id);
         void DeleteKeyFrameEntity(int id);
         void UnregisterKeyFrame(int id);
+        void UndoOdometryCorrection(int lastLoopId, int currentLoopId, Eigen::Matrix4f uncorrection);
         void UndoOdometryCorrection(int lastLoopId, Eigen::Matrix4f uncorrection);
         // Factor creation
         void AddPoseFactor(PoseFactor * poseFactor);
@@ -72,8 +74,8 @@ class WorldModel
         typedef std::pair<int, RefFrame*> RefFramePair;
         typedef std::map<int, KeyFrame<int>*> KeyFramesMap;
         typedef std::pair<int, KeyFrame<int>*> KeyFramePair;
-        typedef std::map<int, LandMark*> LandMarksMap;
-        typedef std::pair<int, LandMark*> LandMarkPair;
+        typedef std::map<string, LandMark*> LandMarksMap;
+        typedef std::pair<string, LandMark*> LandMarkPair;
         typedef std::map<int, PoseFactor*> PoseFactorsMap;
         typedef std::pair<int, PoseFactor*> PoseFactorPair;
 
@@ -94,6 +96,9 @@ class WorldModel
         int currentLandMarkId = -1;
         // static int currentNodeId;
         // static int currentLandMarkId;
+        Transform currentState;
+        Transform odomCorrection = Transform(0, 0, 0, 0, 0, 0);
+        int lastLoopId = -1;
 };
 
 

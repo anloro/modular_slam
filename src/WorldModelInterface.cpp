@@ -7,6 +7,7 @@
 
 // my includes
 #include "WorldModelInterface.h"
+#include <math.h>
 
 using namespace anloro;
 
@@ -27,18 +28,18 @@ int anloro::WorldModelInterface::NodeInternalMapId(int id)
 {
     // TO-DO: Add a time check to comapre between ids of different front-ends!
     
-    std::cout << "The input id is: " << id << " with a count of " << _frontEndToModular_node.count(id) << std::endl;
+    // std::cout << "The input id is: " << id << " with a count of " << _frontEndToModular_node.count(id) << std::endl;
 
 
     // Check if the ID is already registered in the WorldModel
     if (_frontEndToModular_node.count(id) == 0)
     {
         // ID not found, increase node count
-        std::cout << "The current node id is: " << _worldModel->currentNodeId << std::endl;
+        // std::cout << "The current node id is: " << _worldModel->currentNodeId << std::endl;
 
         _worldModel->currentNodeId++;
 
-        std::cout << "And now is: " << _worldModel->currentNodeId << std::endl;
+        // std::cout << "And now is: " << _worldModel->currentNodeId << std::endl;
 
         // And add it
         _frontEndToModular_node.insert(std::make_pair(id, _worldModel->currentNodeId));
@@ -202,11 +203,25 @@ void anloro::WorldModelInterface::AddLandMark(int landMarkId, Transform transfor
             // Get an internal ID for the new landmark
             int internalLandMarkId = LandMarkInternalMapId(landMarkId);
 
-            LandMark *landmark = new LandMark(nodeId, transform,
-                                            sigmaX, sigmaY, sigmaZ, sigmaRoll, sigmaPitch, sigmaYaw);
-            _worldModel->AddLandMarkEntity(internalLandMarkId, landmark);
+            LandMark *landmark = new LandMark();
+            Transform iniStimate;
+            // Set the initial estimate for the landmark in absolute coordinates
+            std::cout << "Current state: \n"<< _worldModel->currentState.ToMatrix4f() << std::endl;
+            std::cout << "LandMark relative pose: \n"<< transform.ToMatrix4f() << std::endl;
+            std::cout << "LandMark absolute pose: "<< std::endl;
+            iniStimate = _worldModel->currentState * transform;
+            std::cout << "Current state * lmRelPose: \n"<< iniStimate.ToMatrix4f() << std::endl;
 
-            std::cout << "Created landmark with id "<< landMarkId << " percieved in node " << nodeId << "!" << std::endl;
+            landmark->SetInitialEstimate(iniStimate);
+            // Add the node from where it was detected
+            landmark->AddNode(nodeId, transform,
+                              sigmaX, sigmaY, sigmaZ, sigmaRoll, sigmaPitch, sigmaYaw);
+
+            _worldModel->AddLandMarkEntity(internalLandMarkId, landmark);
+            std::cout << "INFO: Created landmark with id "<< landMarkId << " percieved in node " << nodeId << "!" << std::endl;
+            std::cout << "INFO: With relative transform: \n"<< transform.ToMatrix4f() << std::endl;
+            std::cout << "INFO: With variances: " 
+                      << sigmaX << " " << sigmaY << " " << sigmaZ << " " << sigmaRoll << " " << sigmaPitch << " " << sigmaYaw << std::endl;
 
         }else{
             // Get the internal ID of the stored landmark
@@ -217,14 +232,22 @@ void anloro::WorldModelInterface::AddLandMark(int landMarkId, Transform transfor
             // Check if the landmark was seen from an already registered node
             if(landmark->ExistsNode(nodeId)){
                 // The robot is probably not moving
-                std::cout << "Node "<< nodeId << " already registered in landMark " << landMarkId << "!" << std::endl;
+                // std::cout << "Node "<< nodeId << " already registered in landMark " << landMarkId << "!" << std::endl;
             }else{
                 landmark->AddNode(nodeId, transform,
                                 sigmaX, sigmaY, sigmaZ, sigmaRoll, sigmaPitch, sigmaYaw);
-                std::cout << "Added node "<< nodeId << " to landMark " << landMarkId << "!" << std::endl;
+
+                // std::cout << "INFO: Added node "<< nodeId << " to landMark " << landMarkId << "!" << std::endl;
+                // std::cout << "INFO: With relative transform: \n"<< transform.ToMatrix4f() << std::endl;
+                // std::cout << "INFO: With variances: " 
+                //           << sigmaX << " " << sigmaY << " " << sigmaZ << " " << sigmaRoll << " " << sigmaPitch << " " << sigmaYaw << std::endl;
 
                 // Optimize after recognizing the same landmark in another node
-                _worldModel->Optimize();
+                if (nodeId - _lastOptimizationNodeId > 1)
+                {
+                    _worldModel->Optimize();
+                    _lastOptimizationNodeId = nodeId;
+                }
             }
         }
     }
@@ -307,8 +330,8 @@ void anloro::WorldModelInterface::AddPoseConstraint(int fromNode, int toNode,
     internalFrom = NodeInternalMapId(fromNode);
     internalTo = NodeInternalMapId(toNode);
 
-    std::cout << "Pose constraint from id: " << fromNode << " with internal id " << internalFrom << std::endl;
-    std::cout << "To id: " << toNode << " with internal id " << internalTo << std::endl;
+    // std::cout << "Pose constraint from id: " << fromNode << " with internal id " << internalFrom << std::endl;
+    // std::cout << "To id: " << toNode << " with internal id " << internalTo << std::endl;
 
     PoseFactor *poseFactor = new PoseFactor(internalFrom, internalTo,
                                             transform,
@@ -370,4 +393,10 @@ void anloro::WorldModelInterface::Optimize()
 void anloro::WorldModelInterface::SavePosesRaw()
 {
     _worldModel->SavePosesRaw();
+}
+
+// This may be removed after the testing and automatically set with an odometru manager in the world model
+void anloro::WorldModelInterface::SetCurrentState(Transform t)
+{
+    _worldModel->currentState = t;
 }

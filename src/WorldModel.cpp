@@ -75,7 +75,13 @@ void anloro::WorldModel::AddRefFrameEntity(RefFrame *refFrame)
 // Add a Key-Frame Entity to the graph
 void anloro::WorldModel::AddKeyFrameEntity(int id, KeyFrame<int> *keyFrame)
 {
+    // Apply the odometry correction
+    Transform correctedPose = keyFrame->GetTransform() * odomCorrection;
+    // Transform correctedPose = odomCorrection * keyFrame->GetTransform();
+    keyFrame->SetTransform(correctedPose);
+
     _keyFramesMap.insert(KeyFramePair(id, keyFrame));
+    currentState = keyFrame->GetTransform();
     // Add to the render window
     UpdateCompletePlot();
 }
@@ -83,13 +89,16 @@ void anloro::WorldModel::AddKeyFrameEntity(int id, KeyFrame<int> *keyFrame)
 // Add a Landmark Entity to the graph
 void anloro::WorldModel::AddLandMarkEntity(int id, LandMark *LandMark)
 {
-    _landMarksMap.insert(LandMarkPair(id, LandMark));
+    string fullId = 'l' + std::to_string(id);
+    std::cout << "INFO: Input LM id: " << fullId << std::endl;
+    _landMarksMap.insert(LandMarkPair(fullId, LandMark));
 }
 
 // Get an existing LandMark pointer from the map
 LandMark* anloro::WorldModel::GetLandMarkEntity(int id)
 {
-    return _landMarksMap[id];
+    string fullId = 'l' + std::to_string(id);
+    return _landMarksMap[fullId];
 }
 
 // ---------------------------------------------------------
@@ -111,6 +120,14 @@ void anloro::WorldModel::AddPoseFactor(PoseFactor *poseFactor)
 // Optimize the World model (using gtsam)
 void anloro::WorldModel::Optimize()
 {
+    // If we are doing odometry correction then undo it before the new optimization
+    // this is because we only do odometry correction in the absolute pose and 
+    // not the constraints (This should be fixed)
+    if(lastLoopId > 0)
+    {
+        UndoOdometryCorrection(lastLoopId, _keyFramesMap.rbegin()->first, odomCorrection.inverse().ToMatrix4f());
+    }
+
     NonlinearFactorGraph graph;
     Values initialEstimate;
     Values optimizedPoses;
@@ -119,12 +136,12 @@ void anloro::WorldModel::Optimize()
     int initId = 0;
     Pose2 priorPose2 = Pose2(0, 0, 0);
     Pose3 priorPose = Pose3(priorPose2);
-    auto priorNoise = noiseModel::Diagonal::Sigmas((Vector(6) << 0.3, 0.3, 0.0, 0.0, 0.0, 0.1).finished());
+    auto priorNoise = noiseModel::Diagonal::Sigmas((Vector(6) << 0.0, 0.0, 0.0, 0.0, 0.0, 0.0).finished());
     graph.addPrior(initId, priorPose, priorNoise);
 
     Transform transform;
-    int idFrom, idTo, NodeId, landMarkId;
-
+    int idFrom, idTo, NodeId;
+    string landMarkId;
     // Add the Pose3 factors
     float sigmaX, sigmaY, sigmaZ, sigmaRoll, sigmaPitch, sigmaYaw;
     for (std::map<int, PoseFactor *>::const_iterator iter = _poseFactorsMap.begin(); iter != _poseFactorsMap.end(); ++iter)
@@ -133,7 +150,23 @@ void anloro::WorldModel::Optimize()
         idTo = iter->second->To();
         transform = iter->second->GetTransform();
 
-        iter->second->GetEulerVariances(sigmaX, sigmaY, sigmaZ, sigmaRoll, sigmaPitch, sigmaYaw);
+        // The last factor is set to one for the loop closure
+        if(iter->first == _poseFactorsMap.rbegin()->first)
+        {
+            std::cout << "INFO: the one with var 1 is " << iter->first << std::endl;
+            std::cout << "with id from " << idFrom << " to " << idTo << std::endl;
+            sigmaX = 1;
+            sigmaY = 1;
+            sigmaZ = 1;
+            sigmaRoll = 1;
+            sigmaPitch = 1;
+            sigmaYaw = 1;
+            iter->second->SetEulerVariances(sigmaX, sigmaY, sigmaZ, sigmaRoll, sigmaPitch, sigmaYaw);
+
+        }else{
+            iter->second->GetEulerVariances(sigmaX, sigmaY, sigmaZ, sigmaRoll, sigmaPitch, sigmaYaw);
+        }
+        
         auto noiseModel = noiseModel::Diagonal::Variances((Vector(6) << sigmaX, sigmaY, sigmaZ, sigmaRoll, sigmaPitch, sigmaYaw).finished());
         Pose3 newMean = Pose3(transform.ToMatrix4f().cast<double>()); // Pose3 needs a double datatype
 
@@ -152,10 +185,15 @@ void anloro::WorldModel::Optimize()
     // Add the landmarks
     float x, y, z, dummyVar;
     int nodeId;
-    for (std::map<int, LandMark*>::const_iterator iteri = _landMarksMap.begin(); iteri != _landMarksMap.end(); ++iteri)
+    for (std::map<string, LandMark*>::const_iterator iteri = _landMarksMap.begin(); iteri != _landMarksMap.end(); ++iteri)
     {
         landMarkId = iteri->first;
-        Symbol landMarkKey('l', landMarkId);
+        int landMarkIdInt = landMarkId[1] - '0'; // get rid off the offset for conversion
+        Symbol landMarkKey(landMarkId[0], landMarkIdInt);
+        // Symbol landMarkKey(landMarkId);
+        // std::cout << "INFO: The generated LM symbol: " << landMarkKey << std::endl;
+        // Symbol landMarkKey('l', landMarkId);
+        
 
         LandMark::RelatedNodesMap relatedNodes = iteri->second->GetRelatedNodes();
 
@@ -173,52 +211,47 @@ void anloro::WorldModel::Optimize()
 
             // auto measurementNoise = noiseModel::Diagonal::Variances((Vector(6) << sigmaX, sigmaY, sigmaZ, sigmaRoll, sigmaPitch, sigmaYaw).finished());
             // auto measurementNoise = noiseModel::Diagonal::Variances((Vector(3) << sigmaX, sigmaY, sigmaZ).finished());
-            auto measurementNoise = noiseModel::Diagonal::Variances((Vector(3) << 0.2, 0.2, 0.2).finished());
+            // auto measurementNoise = noiseModel::Diagonal::Variances((Vector(2) << 0.1, 0.1).finished());
+            auto measurementNoise = noiseModel::Diagonal::Variances((Vector(3) << 0.00001, 0.00001, 0.00001).finished());
+            // auto measurementNoise = noiseModel::Diagonal::Variances((Vector(6) << 0.1, 0.1, 0.1, 0.1, 0.1, 0.1).finished());
             
             // Add transform as a Pose3 BetweenFactor
             // Pose3 newMean = Pose3(transform.ToMatrix4f().cast<double>()); // Pose3 needs a double datatype
             // graph.emplace_shared<BetweenFactor<Pose3>>(nodeId, landMarkKey, newMean, measurementNoise);
 
-            // Add transform as a Point3 BetweenFactor
-            // transform.GetTranslationalAndEulerAngles(x, y, z, dummyVar, dummyVar, dummyVar);
-            // Point3 pLandMark = Point3(x, y, z);
-            // graph.emplace_shared<BetweenFactor<Point3>>(nodeId, landMarkKey, pLandMark, measurementNoise);
-
             // Add transform as a bearing range factor
-            // Let's convert the point into polar coordinates for GTSAM 
-            transform.GetTranslationalAndEulerAngles(x, y, z, dummyVar, dummyVar, dummyVar);
-            float range = std::sqrt(x*x + y*y + z*z);
-            // float theta = atan(y/x);
-            // float sigma = atan(std::sqrt(x*x + y*y)/z);
-            // Eigen::Matrix3f rot;
-            // rot = Eigen::AngleAxisf(0.0, Eigen::Vector3f::UnitX()) * Eigen::AngleAxisf(theta, Eigen::Vector3f::UnitY()) * Eigen::AngleAxisf(sigma, Eigen::Vector3f::UnitZ());
-            // Rot3 rot3 = Rot3(rot.cast<double>());
-            Unit3 u3 = Unit3(x, y, z);
-            graph.emplace_shared<BearingRangeFactor<Pose3, Point3> >(nodeId, landMarkKey, u3, range, measurementNoise);
+            Point3 landmark(transform.X(), transform.Y(), 0);
+            Pose3 p;
+            graph.add(BearingRangeFactor<Pose3, Point3>(nodeId, landMarkKey, p.bearing(landmark), p.range(landmark), measurementNoise));
 
+            // Point2
+            // Point2 landmark(transform.X(), transform.Y());
+            // Pose2 p;
+            // graph.add(BearingRangeFactor<Pose3, Point2>(nodeId, landMarkKey, p.bearing(landmark), p.range(landmark), measurementNoise));
         }
 
-        // Add the initial estimate as the last node registered (should it be used the mean?)
-        // As a Pose3 
-        // Eigen::Matrix4f lm_abs_coord = _keyFramesMap.at(nodeId)->GetTransform().ToMatrix4f() * transform.ToMatrix4f();
-        // Pose3 newMean_abs_coord = Pose3(lm_abs_coord.cast<double>());
-        // initialEstimate.insert(landMarkKey, newMean_abs_coord);
+        // As a Point2
+        // float xAbs, yAbs;
+        // iteri->second->GetInitialEstimate().GetTranslationalVector(xAbs, yAbs, dummyVar);
+        // Point2 pLandMark_abs_coord = Point2(xAbs, yAbs);
+        // initialEstimate.insert(landMarkKey, pLandMark_abs_coord);
+
         // As a Point3
-        // Transform lm_abs_coord = Transform(_keyFramesMap.at(nodeId)->GetTransform().ToMatrix4f() * transform.ToMatrix4f());
-        // lm_abs_coord.GetTranslationalAndEulerAngles(x, y, z, dummyVar, dummyVar, dummyVar);
-        
-        // The initial estimate is in absolute coordinates (map coordinate frame) 
-        // this is computed by using the transform of the last visited node from which
-        // the landmark was detected (may be better to use the mean of every node in which it was detected)
-        float nodeX, nodeY, nodeZ;
-        _keyFramesMap.at(nodeId)->GetTransform().GetTranslationalAndEulerAngles(nodeX, nodeY, nodeZ, dummyVar, dummyVar, dummyVar);
-        Point3 pLandMark_abs_coord = Point3(nodeX + x, nodeY + y, nodeZ + z);
+        float xAbs, yAbs, zAbs;
+        iteri->second->GetInitialEstimate().GetTranslationalAndEulerAngles(xAbs, yAbs, zAbs, dummyVar, dummyVar, dummyVar);
+        Point3 pLandMark_abs_coord = Point3(xAbs, yAbs, zAbs);
         initialEstimate.insert(landMarkKey, pLandMark_abs_coord);
 
+        // As a Pose3
+        // float xAbs, yAbs, zAbs;
+        // Pose3 LandMarkPose3 = Pose3(iteri->second->GetInitialEstimate().ToMatrix4f().cast<double>());
+        // initialEstimate.insert(landMarkKey, LandMarkPose3);
     }
 
-    graph.print();
-    initialEstimate.print();
+    std::cout << "-------------------------------------------" << std::endl;
+    // std::cout << "The initial graph is: " << std::endl;
+    // graph.print();
+    // initialEstimate.print();
 
     // GaussNewtonParams parameters;
     LevenbergMarquardtParams parameters;
@@ -273,8 +306,14 @@ void anloro::WorldModel::Optimize()
     // float endError = optimizer.error();
     // std::cout << "The error after complete optimization is: " << endError << std::endl;
 
-    int graphKey, worldKey;
-    // Update the World Model with the optimized poses.
+    // optimizer.values().print("After the optimization: \n *** \n");
+    
+    // Save the last odometry pose to compute the odometry correction
+    Transform lastOdomPose = _keyFramesMap.rbegin()->second->GetTransform();
+    int lastOdomPoseID = _keyFramesMap.rbegin()->first;
+
+    Symbol graphKey, worldKey;
+    // Update the World Model keyframes with the optimized poses.
     for (std::pair<Values::const_iterator, std::map<int, KeyFrame<int> *>::const_iterator> iter(optimizer.values().begin(), _keyFramesMap.begin());
          iter.first != optimizer.values().end() && iter.second != _keyFramesMap.end();
          ++iter.first, ++iter.second)
@@ -282,6 +321,7 @@ void anloro::WorldModel::Optimize()
         // Check if the iterator is in the same node.
         graphKey = (int)iter.first->key;
         worldKey = iter.second->first;
+        // std::cout << "GraphKey: " << iter.first->key << " worldKey: " << iter.second->first << std::endl;
         if (graphKey == worldKey)
         {
             // Get the optimized poses from the optimizer
@@ -293,9 +333,54 @@ void anloro::WorldModel::Optimize()
         }
         else
         {
-            std::cout << "ERROR: The World model update is failing!" << std::endl;
+            std::cout << "ERROR: The World model KeyFrame update is failing!" << std::endl;
         }
     }
+
+    // Update the World Model landmark estimate with the optimized poses.
+    for (Values::const_iterator iterV = optimizer.values().begin(); iterV != optimizer.values().end(); ++iterV)
+    {
+        Symbol valueKey = iterV->key;
+        for (std::map<string, LandMark *>::const_iterator iterL = _landMarksMap.begin(); iterL != _landMarksMap.end(); ++iterL)
+        {
+            // Check if the iterator is in the same node.
+            landMarkId = iterL->first;
+            int landMarkIdInt = landMarkId[1] - '0'; // get rid off the offset for conversion
+            Symbol lmKey(landMarkId[0], landMarkIdInt);
+
+            // std::cout << "INFO: Result key: " << valueKey << " LM: " << lmKey << std::endl;
+            if (valueKey == lmKey)
+            {
+                // Get the optimized poses from the optimizer
+                // Point2
+                // Point2 optimizedPose = iterV->value.cast<Point2>();
+                // Transform transform = Transform(optimizedPose[0], optimizedPose[1], 0, 0, 0, 0);
+
+                // Point3
+                Point3 optimizedPose = iterV->value.cast<Point3>();
+                Transform transform = Transform(optimizedPose[0], optimizedPose[1], optimizedPose[2], 0, 0, 0);
+
+                // Pose3
+                // Pose3 optimizedPose = iterV->value.cast<Pose3>();
+                // Eigen::Matrix4f matrix = optimizedPose.matrix().cast<float>();
+                // Transform transform = Transform(matrix);
+
+                // Update the World Model with the optimized poses
+                iterL->second->SetInitialEstimate(transform);
+                std::cout << "INFO: The LandMark " << lmKey << " is updated with " << valueKey << " with transform:\n" << transform.ToMatrix4f() << std::endl;
+            }
+        }
+    }
+
+    Transform lastOptimizedPose = _keyFramesMap.rbegin()->second->GetTransform();
+    int lastOptimizedPoseID = _keyFramesMap.rbegin()->first;
+    odomCorrection = Transform(lastOdomPose.inverse().ToMatrix4f() * lastOptimizedPose.ToMatrix4f());
+    std::cout << "INFO: lastOdomPose.inverse() * lastOptimizedPose: \n" << odomCorrection.ToMatrix4f() << std::endl;
+    lastLoopId = _keyFramesMap.rbegin()->first;
+
+    std::cout << "INFO: Odom correction: \n" << odomCorrection.ToMatrix4f() << std::endl;
+    std::cout << "INFO: LastOdomPose: " << lastOdomPoseID << "\n" << lastOdomPose.ToMatrix4f() << std::endl;
+    std::cout << "INFO: lastOptimizedPose: " << lastOptimizedPoseID << "\n" << lastOptimizedPose.ToMatrix4f() << std::endl;
 
     UpdateCompletePlot();
 }
@@ -322,6 +407,38 @@ std::map<int, Eigen::Affine3f> anloro::WorldModel::GetOptimizedPoses()
     return optimizedPoses;
 }
 
+void anloro::WorldModel::UndoOdometryCorrection(int lastLoopId, int currentLoopId, Eigen::Matrix4f uncorrection)
+{
+    // int truid = InternalMapId(lastLoopId);
+    Transform transform, newTransform;
+    Eigen::Matrix4f uncorrected;
+
+    // Iterate over the KeyFrame's map
+    // for (std::map<int, KeyFrame<int> *>::const_iterator iter = _keyFramesMap.begin(); iter->first != lastLoopId; ++iter)
+    // {
+    //     transform = iter->second->GetTransform();
+    //     uncorrected = transform.ToMatrix4f() * uncorrection;
+    //     newTransform = Transform(uncorrected);
+
+    //     iter->second->SetTransform(newTransform);
+    // }
+
+    // std::cout << "INFO: The uncorrection used is \n" << uncorrection << std::endl; 
+
+
+    for (int i = lastLoopId; i < currentLoopId; i++)
+    {
+        transform = _keyFramesMap.at(i)->GetTransform();
+        uncorrected = transform.ToMatrix4f() * uncorrection;
+        newTransform = Transform(uncorrected);
+
+        // std::cout << "INFO: Node " << i << " uncorrected from \n" << transform.ToMatrix4f() << "\nto \n" << newTransform.ToMatrix4f() << std::endl; 
+
+        _keyFramesMap.at(i)->SetTransform(newTransform);
+    }
+}
+
+
 void anloro::WorldModel::UndoOdometryCorrection(int lastLoopId, Eigen::Matrix4f uncorrection)
 {
     // int truid = InternalMapId(lastLoopId);
@@ -337,8 +454,8 @@ void anloro::WorldModel::UndoOdometryCorrection(int lastLoopId, Eigen::Matrix4f 
 
         iter->second->SetTransform(newTransform);
     }
-}
 
+}
 
 void anloro::WorldModel::SavePosesRaw()
 {

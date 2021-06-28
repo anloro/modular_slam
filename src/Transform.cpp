@@ -90,6 +90,32 @@ void anloro::Transform::SetTranslationalAndEulerAngles(float x, float y, float z
     _affine = transform;
 }
 
+void anloro::Transform::SetTranslationalVector(float x, float y, float z)
+{
+    _affine(0, 3) = x;
+    _affine(1, 3) = y;
+    _affine(2, 3) = z;
+}
+
+void anloro::Transform::SetEulerAngles(float roll, float pitch, float yaw)
+{
+    Eigen::Matrix3f rot;
+    rot = Eigen::AngleAxisf(roll, Eigen::Vector3f::UnitX()) 
+            * Eigen::AngleAxisf(pitch, Eigen::Vector3f::UnitY()) 
+            * Eigen::AngleAxisf(yaw, Eigen::Vector3f::UnitZ());
+	Eigen::Matrix3f rotation = Eigen::Quaternionf(rot).normalized().toRotationMatrix();
+
+    _affine(0, 0) = rotation(0, 0);
+    _affine(0, 1) = rotation(0, 1);
+    _affine(0, 2) = rotation(0, 2);
+    _affine(1, 0) = rotation(1, 0);
+    _affine(1, 1) = rotation(1, 1);
+    _affine(1, 2) = rotation(1, 2);
+    _affine(2, 0) = rotation(2, 0);
+    _affine(2, 1) = rotation(2, 1);
+    _affine(2, 2) = rotation(2, 2);
+}
+
 void anloro::Transform::GetTranslationalAndEulerAngles(float &x, float &y, float &z, float &roll, float &pitch, float &yaw)
 {
     x = _affine(0, 3);
@@ -98,6 +124,35 @@ void anloro::Transform::GetTranslationalAndEulerAngles(float &x, float &y, float
     roll = atan2f(_affine(2, 1), _affine(2, 2));
     pitch = asinf(-_affine(2, 0));
     yaw = atan2f(_affine(1, 0), _affine(0, 0));
+}
+
+void anloro::Transform::GetTranslationalVector(float &x, float &y, float &z)
+{
+    x = _affine(0, 3);
+    y = _affine(1, 3);
+    z = _affine(2, 3);
+}
+
+void anloro::Transform::GetEulerAngles(float &roll, float &pitch, float &yaw)
+{
+    roll = atan2f(_affine(2, 1), _affine(2, 2));
+    pitch = asinf(-_affine(2, 0));
+    yaw = atan2f(_affine(1, 0), _affine(0, 0));
+}
+
+float anloro::Transform::X()
+{
+    return _affine(0, 3);
+}
+
+float anloro::Transform::Y()
+{
+    return _affine(1, 3);
+}
+
+float anloro::Transform::Z()
+{
+    return _affine(2, 3);
 }
 
 anloro::Transform anloro::Transform::inverse()
@@ -111,4 +166,17 @@ anloro::Transform anloro::Transform::inverse()
     }
 
 	return Transform(inverse);
+}
+
+anloro::Transform anloro::Transform::operator*(Transform t) const
+{
+	Eigen::Affine3f m = Eigen::Affine3f(Transform(_affine).ToMatrix4f()*t.ToMatrix4f());
+	// make sure rotation is always normalized!
+	m.linear() = Eigen::Quaternionf(m.linear()).normalized().toRotationMatrix();
+	return Transform(m);
+}
+
+anloro::Transform anloro::Transform::Clone()
+{
+	return Transform(_affine);
 }

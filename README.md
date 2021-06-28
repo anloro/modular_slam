@@ -1,5 +1,7 @@
 # modular_slam
 
+Tested in Ubuntu 20.04! Some modifications needed to run on different OS.
+
 ## Necessary packages
 
 ### SFML

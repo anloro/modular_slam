@@ -23,9 +23,10 @@ public:
     PoseFactor() = default;
 
     // Member functions
-    void SetTransform(Transform transform);
     Transform GetTransform() {return _transform;};
     void GetEulerVariances(float &sigmaX, float &sigmaY, float &sigmaZ, float &sigmaRoll, float &sigmaPitch, float &sigmaYaw);
+    void SetTransform(Transform transform);
+    void SetEulerVariances(float sigmaX, float sigmaY, float sigmaZ, float sigmaRoll, float sigmaPitch, float sigmaYaw);
 
     int From();
     int To();

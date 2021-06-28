@@ -104,6 +104,9 @@ class WorldModelInterface
 
         // Save the poses into a txt file in Euler format
         void SavePosesRaw(); 
+
+        // May be removed later
+        void SetCurrentState(Transform t);
     
     protected: 
         WorldModel *_worldModel;
@@ -117,6 +120,8 @@ class WorldModelInterface
         // Same for landmarks
         std::map<int, int> _frontEndToModular_lm;
         std::map<int, int> _modularToFrontEnd_lm;
+        int _lastOptimizationNodeId = 0;
+
 };
 
 

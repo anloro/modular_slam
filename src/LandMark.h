@@ -19,14 +19,14 @@ class LandMark
 {
 public:
     // Constructors
-    LandMark(int nodeId, Transform t,
-             float sigmaX, float sigmaY, float sigmaZ, float sigmaRoll, float sigmaPitch, float sigmaYaw);
+    LandMark(Transform t);
     // The compiler takes care of the default constructor
     LandMark() = default;
 
     // Member functions
     void AddNode(int nodeId, Transform t,
                  float sigmaX, float sigmaY, float sigmaZ, float sigmaRoll, float sigmaPitch, float sigmaYaw);
+    void SetInitialEstimate(Transform t);
     bool ExistsNode(int nodeId);
 
     typedef std::array<float, 6> Uncertainty; // array with variances x, y, z, roll, pitch, yaw
@@ -34,12 +34,14 @@ public:
     typedef std::pair<int, LandMarkData> RelatedNodesPair; // {node ID, LandMark data}
     typedef std::map<int, LandMarkData> RelatedNodesMap;
 
+    Transform GetInitialEstimate(){return _initialStimate;};
     RelatedNodesMap GetRelatedNodes(){return _relatedNodes;};
 
 protected:
     // List of the nodes that percieved the landmark {NodeID, Transform}
     // Note that the Transform must represent the landmark pose relative to the robot frame.
     RelatedNodesMap _relatedNodes;
+    Transform _initialStimate;
 
 };
 

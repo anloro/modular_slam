@@ -44,6 +44,16 @@ void anloro::PoseFactor::SetTransform(Transform transform)
     _transform = transform;
 }
 
+void anloro::PoseFactor::SetEulerVariances(float sigmaX, float sigmaY, float sigmaZ, float sigmaRoll, float sigmaPitch, float sigmaYaw)
+{
+    _sigmaX = sigmaX;
+    _sigmaY = sigmaY;
+    _sigmaZ = sigmaZ;
+    _sigmaRoll = sigmaRoll;
+    _sigmaPitch = sigmaPitch;
+    _sigmaYaw = sigmaYaw;
+}
+
 int anloro::PoseFactor::From()
 {
     return _from;
