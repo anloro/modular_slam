@@ -234,8 +234,7 @@ void anloro::WorldModelInterface::AddLandMark(int landMarkId, Transform transfor
                 // The robot is probably not moving
                 // std::cout << "Node "<< nodeId << " already registered in landMark " << landMarkId << "!" << std::endl;
             }else{
-                landmark->AddNode(nodeId, transform,
-                                sigmaX, sigmaY, sigmaZ, sigmaRoll, sigmaPitch, sigmaYaw);
+                
 
                 // std::cout << "INFO: Added node "<< nodeId << " to landMark " << landMarkId << "!" << std::endl;
                 // std::cout << "INFO: With relative transform: \n"<< transform.ToMatrix4f() << std::endl;
@@ -245,8 +244,15 @@ void anloro::WorldModelInterface::AddLandMark(int landMarkId, Transform transfor
                 // Optimize after recognizing the same landmark in another node
                 if (nodeId - _lastOptimizationNodeId > 1)
                 {
+                    // landmark->AddNode(nodeId, transform,
+                    //             1, 1, 1, 1, 1, 1);
+                    landmark->AddNode(nodeId, transform,
+                                sigmaX, sigmaY, sigmaZ, sigmaRoll, sigmaPitch, sigmaYaw);
                     _worldModel->Optimize();
                     _lastOptimizationNodeId = nodeId;
+                }else{
+                    landmark->AddNode(nodeId, transform,
+                                sigmaX, sigmaY, sigmaZ, sigmaRoll, sigmaPitch, sigmaYaw);
                 }
             }
         }
@@ -393,6 +399,11 @@ void anloro::WorldModelInterface::Optimize()
 void anloro::WorldModelInterface::SavePosesRaw()
 {
     _worldModel->SavePosesRaw();
+}
+
+void anloro::WorldModelInterface::SavePosesRaw(std::string name)
+{
+    _worldModel->SavePosesRaw(name);
 }
 
 // This may be removed after the testing and automatically set with an odometru manager in the world model

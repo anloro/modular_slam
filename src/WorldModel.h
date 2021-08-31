@@ -66,6 +66,7 @@ class WorldModel
         void Optimize();
         std::map<int, Eigen::Affine3f> GetOptimizedPoses();
         void SavePosesRaw();
+        void SavePosesRaw(std::string name);
         void InsertKeyFrameToPlot(KeyFrame<int> *keyFrame);
         void UpdateCompletePlot();
 

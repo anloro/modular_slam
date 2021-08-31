@@ -76,8 +76,14 @@ void anloro::WorldModel::AddRefFrameEntity(RefFrame *refFrame)
 void anloro::WorldModel::AddKeyFrameEntity(int id, KeyFrame<int> *keyFrame)
 {
     // Apply the odometry correction
+    // Let's simplify
+    // float newX = keyFrame->GetTransform().X() + odomCorrection.X();
+    // float newY = keyFrame->GetTransform().Y() + odomCorrection.Y();
+    // Transform correctedPose = keyFrame->GetTransform().Clone();
+    // correctedPose.SetTranslationalVector(newX, newY, keyFrame->GetTransform().Z());
     Transform correctedPose = keyFrame->GetTransform() * odomCorrection;
     // Transform correctedPose = odomCorrection * keyFrame->GetTransform();
+
     keyFrame->SetTransform(correctedPose);
 
     _keyFramesMap.insert(KeyFramePair(id, keyFrame));
@@ -151,22 +157,23 @@ void anloro::WorldModel::Optimize()
         transform = iter->second->GetTransform();
 
         // The last factor is set to one for the loop closure
-        if(iter->first == _poseFactorsMap.rbegin()->first)
-        {
-            std::cout << "INFO: the one with var 1 is " << iter->first << std::endl;
-            std::cout << "with id from " << idFrom << " to " << idTo << std::endl;
-            sigmaX = 1;
-            sigmaY = 1;
-            sigmaZ = 1;
-            sigmaRoll = 1;
-            sigmaPitch = 1;
-            sigmaYaw = 1;
-            iter->second->SetEulerVariances(sigmaX, sigmaY, sigmaZ, sigmaRoll, sigmaPitch, sigmaYaw);
+        // if(iter->first == _poseFactorsMap.rbegin()->first)
+        // {
+        //     std::cout << "INFO: the one with var 1 is " << iter->first << std::endl;
+        //     std::cout << "with id from " << idFrom << " to " << idTo << std::endl;
+        //     sigmaX = 1;
+        //     sigmaY = 1;
+        //     sigmaZ = 1;
+        //     sigmaRoll = 1;
+        //     sigmaPitch = 1;
+        //     sigmaYaw = 1;
+        //     iter->second->SetEulerVariances(sigmaX, sigmaY, sigmaZ, sigmaRoll, sigmaPitch, sigmaYaw);
 
-        }else{
-            iter->second->GetEulerVariances(sigmaX, sigmaY, sigmaZ, sigmaRoll, sigmaPitch, sigmaYaw);
-        }
-        
+        // }else{
+        //     iter->second->GetEulerVariances(sigmaX, sigmaY, sigmaZ, sigmaRoll, sigmaPitch, sigmaYaw);
+        // }
+        iter->second->GetEulerVariances(sigmaX, sigmaY, sigmaZ, sigmaRoll, sigmaPitch, sigmaYaw);
+
         auto noiseModel = noiseModel::Diagonal::Variances((Vector(6) << sigmaX, sigmaY, sigmaZ, sigmaRoll, sigmaPitch, sigmaYaw).finished());
         Pose3 newMean = Pose3(transform.ToMatrix4f().cast<double>()); // Pose3 needs a double datatype
 
@@ -196,7 +203,7 @@ void anloro::WorldModel::Optimize()
         
 
         LandMark::RelatedNodesMap relatedNodes = iteri->second->GetRelatedNodes();
-
+        // Add the constraints to the related nodes
         for (LandMark::RelatedNodesMap::const_iterator iterj = relatedNodes.begin(); iterj != relatedNodes.end(); ++iterj)
         {
             nodeId = iterj->first;
@@ -209,20 +216,20 @@ void anloro::WorldModel::Optimize()
             sigmaPitch = unc[4];
             sigmaYaw = unc[5];
 
-            // auto measurementNoise = noiseModel::Diagonal::Variances((Vector(6) << sigmaX, sigmaY, sigmaZ, sigmaRoll, sigmaPitch, sigmaYaw).finished());
+            auto measurementNoise = noiseModel::Diagonal::Variances((Vector(6) << sigmaX, sigmaY, sigmaZ, sigmaRoll, sigmaPitch, sigmaYaw).finished());
             // auto measurementNoise = noiseModel::Diagonal::Variances((Vector(3) << sigmaX, sigmaY, sigmaZ).finished());
             // auto measurementNoise = noiseModel::Diagonal::Variances((Vector(2) << 0.1, 0.1).finished());
-            auto measurementNoise = noiseModel::Diagonal::Variances((Vector(3) << 0.00001, 0.00001, 0.00001).finished());
-            // auto measurementNoise = noiseModel::Diagonal::Variances((Vector(6) << 0.1, 0.1, 0.1, 0.1, 0.1, 0.1).finished());
+            // auto measurementNoise = noiseModel::Diagonal::Variances((Vector(3) << 0.00001, 0.00001, 0.00001).finished());
+            // auto measurementNoise = noiseModel::Diagonal::Variances((Vector(6) << 0.00001, 0.00001, 0.00001, 0.00001, 0.00001, 0.00001).finished());
             
             // Add transform as a Pose3 BetweenFactor
-            // Pose3 newMean = Pose3(transform.ToMatrix4f().cast<double>()); // Pose3 needs a double datatype
-            // graph.emplace_shared<BetweenFactor<Pose3>>(nodeId, landMarkKey, newMean, measurementNoise);
+            Pose3 newMean = Pose3(transform.ToMatrix4f().cast<double>()); // Pose3 needs a double datatype
+            graph.emplace_shared<BetweenFactor<Pose3>>(nodeId, landMarkKey, newMean, measurementNoise);
 
             // Add transform as a bearing range factor
-            Point3 landmark(transform.X(), transform.Y(), 0);
-            Pose3 p;
-            graph.add(BearingRangeFactor<Pose3, Point3>(nodeId, landMarkKey, p.bearing(landmark), p.range(landmark), measurementNoise));
+            // Point3 landmark(transform.X(), transform.Y(), 0);
+            // Pose3 p;
+            // graph.add(BearingRangeFactor<Pose3, Point3>(nodeId, landMarkKey, p.bearing(landmark), p.range(landmark), measurementNoise));
 
             // Point2
             // Point2 landmark(transform.X(), transform.Y());
@@ -237,15 +244,15 @@ void anloro::WorldModel::Optimize()
         // initialEstimate.insert(landMarkKey, pLandMark_abs_coord);
 
         // As a Point3
-        float xAbs, yAbs, zAbs;
-        iteri->second->GetInitialEstimate().GetTranslationalAndEulerAngles(xAbs, yAbs, zAbs, dummyVar, dummyVar, dummyVar);
-        Point3 pLandMark_abs_coord = Point3(xAbs, yAbs, zAbs);
-        initialEstimate.insert(landMarkKey, pLandMark_abs_coord);
+        // float xAbs, yAbs, zAbs;
+        // iteri->second->GetInitialEstimate().GetTranslationalAndEulerAngles(xAbs, yAbs, zAbs, dummyVar, dummyVar, dummyVar);
+        // Point3 pLandMark_abs_coord = Point3(xAbs, yAbs, zAbs);
+        // initialEstimate.insert(landMarkKey, pLandMark_abs_coord);
 
         // As a Pose3
-        // float xAbs, yAbs, zAbs;
-        // Pose3 LandMarkPose3 = Pose3(iteri->second->GetInitialEstimate().ToMatrix4f().cast<double>());
-        // initialEstimate.insert(landMarkKey, LandMarkPose3);
+        float xAbs, yAbs, zAbs;
+        Pose3 LandMarkPose3 = Pose3(iteri->second->GetInitialEstimate().ToMatrix4f().cast<double>());
+        initialEstimate.insert(landMarkKey, LandMarkPose3);
     }
 
     std::cout << "-------------------------------------------" << std::endl;
@@ -357,13 +364,13 @@ void anloro::WorldModel::Optimize()
                 // Transform transform = Transform(optimizedPose[0], optimizedPose[1], 0, 0, 0, 0);
 
                 // Point3
-                Point3 optimizedPose = iterV->value.cast<Point3>();
-                Transform transform = Transform(optimizedPose[0], optimizedPose[1], optimizedPose[2], 0, 0, 0);
+                // Point3 optimizedPose = iterV->value.cast<Point3>();
+                // Transform transform = Transform(optimizedPose[0], optimizedPose[1], optimizedPose[2], 0, 0, 0);
 
                 // Pose3
-                // Pose3 optimizedPose = iterV->value.cast<Pose3>();
-                // Eigen::Matrix4f matrix = optimizedPose.matrix().cast<float>();
-                // Transform transform = Transform(matrix);
+                Pose3 optimizedPose = iterV->value.cast<Pose3>();
+                Eigen::Matrix4f matrix = optimizedPose.matrix().cast<float>();
+                Transform transform = Transform(matrix);
 
                 // Update the World Model with the optimized poses
                 iterL->second->SetInitialEstimate(transform);
@@ -374,9 +381,18 @@ void anloro::WorldModel::Optimize()
 
     Transform lastOptimizedPose = _keyFramesMap.rbegin()->second->GetTransform();
     int lastOptimizedPoseID = _keyFramesMap.rbegin()->first;
-    odomCorrection = Transform(lastOdomPose.inverse().ToMatrix4f() * lastOptimizedPose.ToMatrix4f());
+
+    // Let's simplify the computations
+    // lastOptimizedPose.SetEulerAngles(0,0,0);
+    // lastOdomPose.SetEulerAngles(0,0,0);
+    // float optX, optY, optZ, odomX, odomY, odomZ;
+    // lastOptimizedPose.GetTranslationalVector(optX, optY, optZ);
+    // lastOdomPose.GetTranslationalVector(odomX, odomY, odomZ);
+    // odomCorrection.SetTranslationalVector(optX - odomX, optY - odomY, 0);
+    // odomCorrection = Transform(lastOdomPose.inverse().ToMatrix4f() * lastOptimizedPose.ToMatrix4f());
+
     std::cout << "INFO: lastOdomPose.inverse() * lastOptimizedPose: \n" << odomCorrection.ToMatrix4f() << std::endl;
-    lastLoopId = _keyFramesMap.rbegin()->first;
+    // lastLoopId = _keyFramesMap.rbegin()->first;
 
     std::cout << "INFO: Odom correction: \n" << odomCorrection.ToMatrix4f() << std::endl;
     std::cout << "INFO: LastOdomPose: " << lastOdomPoseID << "\n" << lastOdomPose.ToMatrix4f() << std::endl;
@@ -479,6 +495,33 @@ void anloro::WorldModel::SavePosesRaw()
     }
 
     std::cout << "Raw poses saved as rawposes.txt" << std::endl;
+
+    // Close the file
+    outputFile.close();
+}
+
+void anloro::WorldModel::SavePosesRaw(std::string name)
+{
+    // Create and open a text file
+    std::ofstream outputFile(name);
+
+    int nodeId;
+    float x, y, z, roll, pitch, yaw;
+    Transform transform;
+
+    // Iterate over the KeyFrame's map
+    for (std::map<int, KeyFrame<int> *>::const_iterator iter = _keyFramesMap.begin(); iter != _keyFramesMap.end(); ++iter)
+    {
+        // Get the information of each node
+        nodeId = iter->first;
+        transform = iter->second->GetTransform();
+        transform.GetTranslationalAndEulerAngles(x, y, z, roll, pitch, yaw);
+
+        // Write to the file
+        outputFile << nodeId << " " << x << " " << y << " " << z << " " << roll << " " << pitch << " " << yaw << std::endl;
+    }
+
+    std::cout << "Raw poses saved as: " << name << std::endl;
 
     // Close the file
     outputFile.close();
