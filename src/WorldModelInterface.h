@@ -41,18 +41,18 @@ class WorldModelInterface
         void AddRefFrame(Transform transform);
 
         // Add a Key-frame
-        void AddKeyFrame(int id, float x, float y, float z, float roll, float pitch, float yaw);
+        void AddKeyFrame(double timeStamp,int id, float x, float y, float z, float roll, float pitch, float yaw);
 
-        void AddKeyFrame(int id, 
+        void AddKeyFrame(double timeStamp,int id, 
                          float r11, float r12, float r13, float o14,
                          float r21, float r22, float r23, float o24,
                          float r31, float r32, float r33, float o34);
 
-        void AddKeyFrame(int id, Eigen::Matrix4f matrix);
+        void AddKeyFrame(double timeStamp,int id, Eigen::Matrix4f matrix);
 
-        void AddKeyFrame(int id, Eigen::Affine3f affineT);
+        void AddKeyFrame(double timeStamp,int id, Eigen::Affine3f affineT);
 
-        void AddKeyFrame(int id, Transform transform);
+        void AddKeyFrame(double timeStamp,int id, Transform transform);
 
         // Add a landmark
         void AddLandMark(int landMarkId, Transform transform,

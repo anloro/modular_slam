@@ -18,20 +18,23 @@ class KeyFrame : public RefFrame
 {
 public:
     // Constructors
-    KeyFrame(Transform transform, Ts &...t);
+    KeyFrame(double timeStamp, Transform transform, Ts &...t);
     // The compiler takes care of the default constructor
     KeyFrame() = default;
 
     template <typename T>
     T GetData();
+    double GetTimeStamp(){return _timeStamp;};
 
 protected:
     std::tuple<Ts...> _rawData;
+    double _timeStamp;
 };
 
 template <class... Ts>
-KeyFrame<Ts...>::KeyFrame(Transform transform, Ts &...data)
+KeyFrame<Ts...>::KeyFrame(double timeStamp, Transform transform, Ts &...data)
 {
+    _timeStamp = timeStamp;
     _transform = transform;
 
     std::tuple<Ts...> rawData = std::tuple<Ts...>(data...);

@@ -475,29 +475,8 @@ void anloro::WorldModel::UndoOdometryCorrection(int lastLoopId, Eigen::Matrix4f 
 
 void anloro::WorldModel::SavePosesRaw()
 {
-    // Create and open a text file
-    std::ofstream outputFile("rawposes.txt");
-
-    int nodeId;
-    float x, y, z, roll, pitch, yaw;
-    Transform transform;
-
-    // Iterate over the KeyFrame's map
-    for (std::map<int, KeyFrame<int> *>::const_iterator iter = _keyFramesMap.begin(); iter != _keyFramesMap.end(); ++iter)
-    {
-        // Get the information of each node
-        nodeId = iter->first;
-        transform = iter->second->GetTransform();
-        transform.GetTranslationalAndEulerAngles(x, y, z, roll, pitch, yaw);
-
-        // Write to the file
-        outputFile << nodeId << " " << x << " " << y << " " << z << " " << roll << " " << pitch << " " << yaw << std::endl;
-    }
-
-    std::cout << "Raw poses saved as rawposes.txt" << std::endl;
-
-    // Close the file
-    outputFile.close();
+    // Use the default name
+    SavePosesRaw("rawposes.txt");
 }
 
 void anloro::WorldModel::SavePosesRaw(std::string name)
@@ -505,23 +484,81 @@ void anloro::WorldModel::SavePosesRaw(std::string name)
     // Create and open a text file
     std::ofstream outputFile(name);
 
+    double timeStamp;
     int nodeId;
     float x, y, z, roll, pitch, yaw;
     Transform transform;
+
+    // Add a line to identify each element
+    outputFile << "# timestamp x y z roll pitch yaw id" << std::endl;
 
     // Iterate over the KeyFrame's map
     for (std::map<int, KeyFrame<int> *>::const_iterator iter = _keyFramesMap.begin(); iter != _keyFramesMap.end(); ++iter)
     {
         // Get the information of each node
+        timeStamp = iter->second->GetTimeStamp();
         nodeId = iter->first;
         transform = iter->second->GetTransform();
         transform.GetTranslationalAndEulerAngles(x, y, z, roll, pitch, yaw);
 
         // Write to the file
-        outputFile << nodeId << " " << x << " " << y << " " << z << " " << roll << " " << pitch << " " << yaw << std::endl;
+        outputFile << timeStamp << " " << x << " " << y << " " << z << " " << roll << " " << pitch << " " << yaw << " " << nodeId << std::endl;
     }
 
-    std::cout << "Raw poses saved as: " << name << std::endl;
+
+    // Save the constraints
+    int idFrom, idTo;
+    outputFile << "\n# (constraints) idFrom idTo" << std::endl;
+    // Iterate over the constraints map
+    for (std::map<int, PoseFactor *>::const_iterator iter = _poseFactorsMap.begin(); iter != _poseFactorsMap.end(); ++iter)
+    {
+        idFrom = iter->second->From();
+        idTo = iter->second->To();
+
+        // Write to the file
+        outputFile << idFrom << " " << idTo << std::endl;
+    }
+
+    // Save the landmarks
+    string landMarkId;
+    int lmId;
+    outputFile << "\n# (landmarks) x y z roll pitch yaw id" << std::endl;
+    // Iterate over the landmark map
+    for (std::map<string, LandMark *>::const_iterator iter = _landMarksMap.begin(); iter != _landMarksMap.end(); ++iter)
+    {
+        // Get the information of each landmark
+        landMarkId = iter->first;
+        lmId = landMarkId[1] - '0'; // get rid off the offset for conversion
+        transform = iter->second->GetInitialEstimate();
+        transform.GetTranslationalAndEulerAngles(x, y, z, roll, pitch, yaw);
+
+        // Write to the file
+        outputFile << x << " " << y << " " << z << " " << roll << " " << pitch << " " << yaw << " " << lmId << std::endl;
+    }
+
+    // Add the constraints to the related nodes
+    outputFile << "\n# (landmarks constraints) lmId relatedNodeId0 relatedNodeId1 ..." << std::endl;
+    // Iterate over the landmark map
+    for (std::map<string, LandMark *>::const_iterator iter = _landMarksMap.begin(); iter != _landMarksMap.end(); ++iter)
+    {
+        // Get the information of each landmark
+        landMarkId = iter->first;
+        lmId = landMarkId[1] - '0'; // get rid off the offset for conversion
+        outputFile << lmId << " ";
+
+        // Get the related nodes to the landmark
+        LandMark::RelatedNodesMap relatedNodes = iter->second->GetRelatedNodes();
+        for (LandMark::RelatedNodesMap::const_iterator iterj = relatedNodes.begin(); iterj != relatedNodes.end(); ++iterj)
+        {
+            nodeId = iterj->first;
+            // Write to the file
+            outputFile << nodeId << " ";
+        }
+
+        outputFile << std::endl;
+    }
+
+    std::cout << "Pose-graph information saved as: " << name << std::endl;
 
     // Close the file
     outputFile.close();

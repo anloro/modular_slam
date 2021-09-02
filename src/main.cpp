@@ -73,11 +73,11 @@ int main()
 
     // 3. Create the data structure to hold the initialEstimate estimate to the solution
     // For illustrative purposes, these have been deliberately set to incorrect values
-    interface.AddKeyFrame(1, 0.5, 0.0, 0, 0, 0, 0.2);
-    interface.AddKeyFrame(2, 2.3, 0.1, 0, 0, 0, -0.2);
-    interface.AddKeyFrame(3, 4.1, 0.1, 0, 0, 0, M_PI_2);
-    interface.AddKeyFrame(4, 4.0, 2.0, 0, 0, 0, M_PI);
-    interface.AddKeyFrame(5, 2.1, 2.1, 0, 0, 0, -M_PI_2);
+    interface.AddKeyFrame(0.0, 1, 0.5, 0.0, 0, 0, 0, 0.2);
+    interface.AddKeyFrame(0.1, 2, 2.3, 0.1, 0, 0, 0, -0.2);
+    interface.AddKeyFrame(0.2, 3, 4.1, 0.1, 0, 0, 0, M_PI_2);
+    interface.AddKeyFrame(0.3, 4, 4.0, 2.0, 0, 0, 0, M_PI);
+    interface.AddKeyFrame(0.4, 5, 2.1, 2.1, 0, 0, 0, -M_PI_2);
 
     interface.Optimize();
 

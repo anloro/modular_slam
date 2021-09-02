@@ -147,15 +147,15 @@ void anloro::WorldModelInterface::AddRefFrame(Transform transform)
 }
 
 // Add a key-frame to the World model
-void anloro::WorldModelInterface::AddKeyFrame(int id, 
+void anloro::WorldModelInterface::AddKeyFrame(double timeStamp, int id, 
                                               float x, float y, float z, 
                                               float roll, float pitch, float yaw)
 {
     Transform transform(x, y, z, roll, pitch, yaw);
-    AddKeyFrame(id, transform);
+    AddKeyFrame(timeStamp, id, transform);
 }
 
-void anloro::WorldModelInterface::AddKeyFrame(int id, 
+void anloro::WorldModelInterface::AddKeyFrame(double timeStamp, int id, 
                                               float r11, float r12, float r13, float o14,
                                               float r21, float r22, float r23, float o24,
                                               float r31, float r32, float r33, float o34)
@@ -163,28 +163,28 @@ void anloro::WorldModelInterface::AddKeyFrame(int id,
     Transform transform(r11, r12, r13, o14,
                         r21, r22, r23, o24,
                         r31, r32, r33, o34);
-    AddKeyFrame(id, transform);
+    AddKeyFrame(timeStamp, id, transform);
 }
 
-void anloro::WorldModelInterface::AddKeyFrame(int id, Eigen::Matrix4f matrix)
+void anloro::WorldModelInterface::AddKeyFrame(double timeStamp, int id, Eigen::Matrix4f matrix)
 {
     Transform transform(matrix);
-    AddKeyFrame(id, transform);
+    AddKeyFrame(timeStamp, id, transform);
 }
 
-void anloro::WorldModelInterface::AddKeyFrame(int id, Eigen::Affine3f affineT)
+void anloro::WorldModelInterface::AddKeyFrame(double timeStamp, int id, Eigen::Affine3f affineT)
 {
     Transform transform(affineT);
-    AddKeyFrame(id, transform);
+    AddKeyFrame(timeStamp, id, transform);
 }
 
-void anloro::WorldModelInterface::AddKeyFrame(int id, Transform transform)
+void anloro::WorldModelInterface::AddKeyFrame(double timeStamp, int id, Transform transform)
 {
     int internalId;
     int dummyData = 0;
     internalId = NodeInternalMapId(id);
 
-    KeyFrame<int> *node = new KeyFrame<int>(transform, dummyData);
+    KeyFrame<int> *node = new KeyFrame<int>(timeStamp, transform, dummyData);
     _worldModel->AddKeyFrameEntity(internalId, node);
 }
 
