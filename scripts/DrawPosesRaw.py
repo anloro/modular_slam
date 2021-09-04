@@ -110,6 +110,10 @@ def updatePlotLimits(x, y, minXLim, maxXLim, minYLim, maxYLim):
 def main():
     
     rawPoses = sys.argv[1]
+    if len(sys.argv) > 2:
+        title = sys.argv[2]
+    else:
+        title = "Modular framework result"
     # rawPoses = 'rawposes.txt' 
     
     fig, ax = plt.subplots() # note we must use plt.subplots, not plt.subplot
@@ -146,7 +150,7 @@ def main():
             nodePoses.update({id: (fx, fy)})
 
             # Plot the nodes
-            circle = plt.Circle((fx, fy), radius = radius, fc = 'r', lw = radius/10, zorder = 2)        
+            circle = plt.Circle((fx, fy), radius = radius, fc = 'tab:blue', lw = radius/10, zorder = 2)        
             # circle = plt.Circle((fx, fy), radius = radius, ec = 'w', fc = 'r', lw = radius/10, zorder = 2)        
             ax.add_patch(circle)
 
@@ -164,7 +168,7 @@ def main():
                 step = abs(int(id) - int(idFrom))
                 if step > 1:
                     poseTo = nodePoses[id]
-                    ax.plot([poseFrom[0], poseTo[0]], [poseFrom[1], poseTo[1]], zorder=3, color='purple', linewidth=0.5)
+                    ax.plot([poseFrom[0], poseTo[0]], [poseFrom[1], poseTo[1]], zorder=3, color='red', linewidth=0.5)
 
             line = reader.readline()
 
@@ -202,7 +206,7 @@ def main():
     ax.set_ylim((min(minXLim, minYLim) - 2*radius, max(maxXLim,maxYLim) + 2*radius))
     plt.xlabel("X (m)")
     plt.ylabel("Y (m)")
-    plt.title('Modular framework result')
+    plt.title(title)
 
     # fig.savefig(rawPoses[:-4]+'.png')
     plt.savefig(rawPoses[:-4]+'.eps', format='eps')
