@@ -11,6 +11,7 @@
 #include "KeyFrame.h"
 #include "LandMark.h"
 #include "PoseFactor.h"
+#include "UdpClientServer.h"
 
 #include "WorldModelPlotter.h"
 #include <SFML/Graphics.hpp>
@@ -35,20 +36,16 @@ namespace anloro{
 
 class WorldModel
 {
-    private:
-        // CONSTRUCTOR (private to make it a singleton)
+    public:
+        // CONSTRUCTOR 
         WorldModel();
 
-    protected:
-        static WorldModel* worldModel_;
-
-    public:
-        // Singletons should not be cloneable.
-        WorldModel(WorldModel const&) = delete;
-        // Singletons should not be assignable.
-        void operator = (WorldModel const&) = delete;
-
         // MEMBER FUNCTIONS
+        // Front-end utilities
+        int NodeInternalMapId(int id);
+        int GetNodeIdFromInternalMap(int id);
+        int LandMarkInternalMapId(int id);
+        int GetLandMarkIdFromInternalMap(int id);
         // Public static function returning a reference to the singleton class:
         static WorldModel *GetInstance();
         // Entity creation
@@ -90,6 +87,9 @@ class WorldModel
         // Plotting thread
         std::thread * _plotterThread;
         WorldModelPlotter _plotter;
+
+        // Communication channel
+
     
     public:
         // Keeps an internal count of the different entities
@@ -100,6 +100,18 @@ class WorldModel
         Transform currentState;
         Transform odomCorrection = Transform(0, 0, 0, 0, 0, 0);
         int lastLoopId = -1;
+        int _lastOptimizationNodeId = 0;
+
+        // INTERFACE META DATA
+        // Map the front-end node id into the modular_slam framework node id
+        std::map<int, int> _frontEndToModular_node;
+        // Map this framework node id into the front-end node id
+        std::map<int, int> _modularToFrontEnd_node;
+        // Same for landmarks
+        std::map<int, int> _frontEndToModular_lm;
+        std::map<int, int> _modularToFrontEnd_lm;
+        std::map<int, int> _numberOfTimesSinceFirstDetection;
+
 };
 
 

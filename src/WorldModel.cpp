@@ -37,28 +37,98 @@ using namespace gtsam;
 using namespace anloro;
 
 
-WorldModel *WorldModel::worldModel_ = nullptr;
-// int anloro::WorldModel::currentNodeId = -1;
-// int anloro::WorldModel::currentLandMarkId = -1;
-
 anloro::WorldModel::WorldModel()
 {
     _plotterThread = new std::thread(&WorldModelPlotter::Spin, &_plotter);
 }
 
-WorldModel *WorldModel::GetInstance()
-{
-    if (worldModel_ == nullptr)
-    {
-        worldModel_ = new WorldModel();
-    }
-    return worldModel_;
+// ---------------------------------------------------------
+// --------- Utilities for Front-end interaction -----------
+// ---------------------------------------------------------
 
-    // static WorldModel* instance; // a static local variable is initialized on first call to the
-    //                              // function only, afterwards, it is always the same variable
-    //                              // for every subsequent calls to the function.
-    // return instance;
-};
+// Map the input ID into our own internal IDs
+int anloro::WorldModel::NodeInternalMapId(int id)
+{
+    // TO-DO: Add a time check to comapre between ids of different front-ends!
+    
+    // std::cout << "The input id is: " << id << " with a count of " << _frontEndToModular_node.count(id) << std::endl;
+
+
+    // Check if the ID is already registered in the WorldModel
+    if (_frontEndToModular_node.count(id) == 0)
+    {
+        // ID not found, increase node count
+        // std::cout << "The current node id is: " << currentNodeId << std::endl;
+
+        currentNodeId++;
+
+        // std::cout << "And now is: " << currentNodeId << std::endl;
+
+        // And add it
+        _frontEndToModular_node.insert(std::make_pair(id, currentNodeId));
+        _modularToFrontEnd_node.insert(std::make_pair(currentNodeId, id));
+        return currentNodeId;
+    }
+    else
+    {
+        // ID found
+        return _frontEndToModular_node[id];
+    }
+}
+
+// Recover original ID from internal IDs
+int anloro::WorldModel::GetNodeIdFromInternalMap(int id)
+{
+    // Check for the ID
+    if (_modularToFrontEnd_node.count(id) == 0)
+    {
+        // ID not found!
+        std::cout << "WARNING: ID " << id << " not found!" << std::endl;
+        return -1;
+    }
+    else
+    {
+        // ID found
+        return _modularToFrontEnd_node[id];
+    }
+}
+
+// Map the input ID into our own internal IDs
+int anloro::WorldModel::LandMarkInternalMapId(int id)
+{
+    // Check if the ID is already registered in the WorldModel
+    if (_frontEndToModular_lm.count(id) == 0)
+    {
+        // ID not found, increase LandMark count
+        currentLandMarkId++;
+        // And add it
+        _frontEndToModular_lm.insert(std::make_pair(id, currentLandMarkId));
+        _modularToFrontEnd_lm.insert(std::make_pair(currentLandMarkId, id));
+        return currentLandMarkId;
+    }
+    else
+    {
+        // ID found
+        return _frontEndToModular_lm[id];
+    }
+}
+
+// Recover original ID from internal IDs
+int anloro::WorldModel::GetLandMarkIdFromInternalMap(int id)
+{
+    // Check for the ID
+    if (_modularToFrontEnd_lm.count(id) == 0)
+    {
+        // ID not found!
+        // std::cout << "WARNING: ID " << id << " not found!" << std::endl;
+        return -1;
+    }
+    else
+    {
+        // ID found
+        return _modularToFrontEnd_lm[id];
+    }
+}
 
 // ---------------------------------------------------------
 // ------------- Entity creation definitions ---------------
@@ -594,4 +664,302 @@ void anloro::WorldModel::UpdateCompletePlot()
     }
 
     _plotter.SetAxis(newxAxis, newyAxis);
+}
+
+
+int main(int argc, char **argv)
+{
+    // Create the WorldModel
+    WorldModel worldModel;
+    // Create the UDP server
+    UdpServer server = UdpServer();
+    int recvlen;
+    
+    // Create the buffer
+    void * buffer = calloc(1, sizeof(struct MsgUdp));
+
+    // Loop
+    for (;;) 
+    {    
+        // Receive data using the buffer
+        recvlen = server.Receive(buffer);
+        // Interpret the data using the message structure
+        MsgUdp * msg = (struct MsgUdp *)buffer;
+
+        // Process the message
+        switch (msg->type)
+        {
+        // RefFrame case
+        case 'a':
+        {
+            float x, y, z, pitch, yaw, roll;
+            x = msg->element.refFrame.pose.x;
+            y = msg->element.refFrame.pose.y;
+            z = msg->element.refFrame.pose.z;
+            roll = msg->element.refFrame.pose.roll;
+            pitch = msg->element.refFrame.pose.pitch;
+            yaw = msg->element.refFrame.pose.yaw;
+            Transform transform(x, y, z, roll, pitch, yaw);
+            RefFrame *frame = new RefFrame(transform);
+            worldModel.AddRefFrameEntity(frame);
+            break;
+        }
+
+        // KeyFrame case
+        case 'b':
+        {
+            std::cout << "INFO: Received KeyFrame command." << std::endl;
+
+            float x, y, z, pitch, yaw, roll;
+            double timeStamp;
+            int id;
+            x = msg->element.keyFrame.pose.x;
+            y = msg->element.keyFrame.pose.y;
+            z = msg->element.keyFrame.pose.z;
+            roll = msg->element.keyFrame.pose.roll;
+            pitch = msg->element.keyFrame.pose.pitch;
+            yaw = msg->element.keyFrame.pose.yaw;
+            id = msg->element.keyFrame.id;
+            timeStamp = msg->element.keyFrame.timeStamp;
+            Transform transform(x, y, z, roll, pitch, yaw);
+            int internalId;
+            int dummyData = 0;
+            internalId = worldModel.NodeInternalMapId(id);
+            KeyFrame<int> *node = new KeyFrame<int>(timeStamp, transform, dummyData);
+            worldModel.AddKeyFrameEntity(internalId, node);
+            break;
+        }
+
+        // LandMark case
+        case 'c':
+        {
+            std::cout << "INFO: Received LandMark command." << std::endl;
+
+            float x, y, z, pitch, yaw, roll, sigmaX, sigmaY, sigmaZ, sigmaRoll, sigmaPitch, sigmaYaw;
+            double timeStamp;
+            int landMarkId;
+            x = msg->element.landmark.pose.x;
+            y = msg->element.landmark.pose.y;
+            z = msg->element.landmark.pose.z;
+            roll = msg->element.landmark.pose.roll;
+            pitch = msg->element.landmark.pose.pitch;
+            yaw = msg->element.landmark.pose.yaw;
+            sigmaX = msg->element.landmark.unc.sigmaX;
+            sigmaY = msg->element.landmark.unc.sigmaY;
+            sigmaZ = msg->element.landmark.unc.sigmaZ;
+            sigmaRoll = msg->element.landmark.unc.sigmaRoll;
+            sigmaPitch = msg->element.landmark.unc.sigmaPitch;
+            sigmaYaw = msg->element.landmark.unc.sigmaYaw;
+            landMarkId = msg->element.landmark.landMarkId;
+            Transform transform = Transform(x, y, z, roll, pitch, yaw);
+
+            int nodeId = worldModel.currentNodeId;
+
+            std::cout << "Landmark " << landMarkId << " seen from node " << nodeId << ": \n" << transform.ToMatrix4f() << std::endl;
+
+            // Only consider a landMark if we have odometry
+            if(nodeId > 0)
+            {
+                // Check if the LandMark wasn't previously seen
+                if (worldModel._frontEndToModular_lm.count(landMarkId) == 0)
+                {
+                    // Get an internal ID for the new landmark
+                    int internalLandMarkId = worldModel.LandMarkInternalMapId(landMarkId);
+
+                    LandMark *landmark = new LandMark();
+                    Transform iniStimate;
+                    // Set the initial estimate for the landmark in absolute coordinates
+                    std::cout << "Current state: \n"<< worldModel.currentState.ToMatrix4f() << std::endl;
+                    std::cout << "LandMark relative pose: \n"<< transform.ToMatrix4f() << std::endl;
+                    std::cout << "LandMark absolute pose: "<< std::endl;
+                    iniStimate = worldModel.currentState * transform;
+                    std::cout << "Current state * lmRelPose: \n"<< iniStimate.ToMatrix4f() << std::endl;
+
+                    landmark->SetInitialEstimate(iniStimate);
+                    // Add the node from where it was detected
+                    landmark->AddNode(nodeId, transform,
+                                    sigmaX, sigmaY, sigmaZ, sigmaRoll, sigmaPitch, sigmaYaw);
+
+                    worldModel.AddLandMarkEntity(internalLandMarkId, landmark);
+                    std::cout << "INFO: Created landmark with id "<< landMarkId << " percieved in node " << nodeId << "!" << std::endl;
+                    std::cout << "INFO: With relative transform: \n"<< transform.ToMatrix4f() << std::endl;
+                    std::cout << "INFO: With variances: " 
+                            << sigmaX << " " << sigmaY << " " << sigmaZ << " " << sigmaRoll << " " << sigmaPitch << " " << sigmaYaw << std::endl;
+
+                }else{
+                    // Get the internal ID of the stored landmark
+                    int internalLandMarkId = worldModel.LandMarkInternalMapId(landMarkId);
+                    // And retrive its pointer from the worldmodel
+                    LandMark *landmark = worldModel.GetLandMarkEntity(internalLandMarkId);
+
+                    // Check if the landmark was seen from an already registered node
+                    if(landmark->ExistsNode(nodeId)){
+                        // The robot is probably not moving
+                        // std::cout << "Node "<< nodeId << " already registered in landMark " << landMarkId << "!" << std::endl;
+                    }else{
+                        
+
+                        std::cout << "INFO: Added node "<< nodeId << " to landMark " << landMarkId << "!" << std::endl;
+                        std::cout << "INFO: With relative transform: \n"<< transform.ToMatrix4f() << std::endl;
+                        std::cout << "INFO: With variances: " 
+                                  << sigmaX << " " << sigmaY << " " << sigmaZ << " " << sigmaRoll << " " << sigmaPitch << " " << sigmaYaw << std::endl;
+
+                        // Optimize after recognizing the same landmark in another node
+                        if (nodeId - worldModel._lastOptimizationNodeId > 1)
+                        {
+                            landmark->AddNode(nodeId, transform,
+                                        sigmaX, sigmaY, sigmaZ, sigmaRoll, sigmaPitch, sigmaYaw);
+                            worldModel.Optimize();
+                            worldModel._lastOptimizationNodeId = nodeId;
+                        }else{
+                            landmark->AddNode(nodeId, transform,
+                                        sigmaX, sigmaY, sigmaZ, sigmaRoll, sigmaPitch, sigmaYaw);
+                        }
+                    }
+                }
+            }
+            break;
+        }
+
+        // PoseFactor case
+        case 'd':{
+            std::cout << "INFO: Received PoseFactor command." << std::endl;
+
+            float x, y, z, pitch, yaw, roll, sigmaX, sigmaY, sigmaZ, sigmaRoll, sigmaPitch, sigmaYaw;
+            int fromNode, toNode;
+            x = msg->element.poseFactor.pose.x;
+            y = msg->element.poseFactor.pose.y;
+            z = msg->element.poseFactor.pose.z;
+            roll = msg->element.poseFactor.pose.roll;
+            pitch = msg->element.poseFactor.pose.pitch;
+            yaw = msg->element.poseFactor.pose.yaw;
+            sigmaX = msg->element.poseFactor.unc.sigmaX;
+            sigmaY = msg->element.poseFactor.unc.sigmaY;
+            sigmaZ = msg->element.poseFactor.unc.sigmaZ;
+            sigmaRoll = msg->element.poseFactor.unc.sigmaRoll;
+            sigmaPitch = msg->element.poseFactor.unc.sigmaPitch;
+            sigmaYaw = msg->element.poseFactor.unc.sigmaYaw;
+            fromNode = msg->element.poseFactor.idFrom;
+            toNode = msg->element.poseFactor.idTo;
+            Transform transform = Transform(x, y, z, roll, pitch, yaw);
+
+            int internalFrom, internalTo;
+            internalFrom = worldModel.NodeInternalMapId(fromNode);
+            internalTo = worldModel.NodeInternalMapId(toNode);
+
+            // std::cout << "Pose constraint from id: " << fromNode << " with internal id " << internalFrom << std::endl;
+            // std::cout << "To id: " << toNode << " with internal id " << internalTo << std::endl;
+
+            PoseFactor *poseFactor = new PoseFactor(internalFrom, internalTo,
+                                                    transform,
+                                                    sigmaX, sigmaY, sigmaZ,
+                                                    sigmaRoll, sigmaPitch, sigmaYaw);
+
+            worldModel.AddPoseFactor(poseFactor);
+            break;
+        }
+
+        // SaveData command case
+        case 'e':
+            std::cout << "INFO: Received SavePoses command." << std::endl;
+
+            worldModel.SavePosesRaw("PosesRaw.txt");
+            break;
+
+        // Optimized poses request case
+        case 'f':
+        {
+            std::cout << "INFO: Received GetOptimizedPoses command." << std::endl;
+
+            // Get the optimized poses
+            std::map<int, Eigen::Affine3f> optimizedPoses;
+            optimizedPoses = worldModel.GetOptimizedPoses();
+            
+            // Send a message with the size of the graph
+            // MsgUdp newMsg;
+            // newMsg.type = 'f';
+
+            // newMsg.size = optimizedPoses.size();
+            // Check if the last id is not registered yet
+            // if (worldModel.GetNodeIdFromInternalMap(optimizedPoses.end()->first) < 0){
+            //     newMsg.size = optimizedPoses.size() - 1;
+            // }else{
+            //     newMsg.size = optimizedPoses.size();
+            // }
+            // std::cout << "INFO: Size sent: " << newMsg.size << std::endl;
+            // server.Send(newMsg);
+
+            // Map the optimized poses into the corresponding id used by the front-end
+            int nodeId, frontEndId;
+            // std::map<int, Eigen::Affine3f> mappedOptimizedPoses;
+            typedef std::pair<int, Eigen::Affine3f> optimizedPose;
+
+            // Iterate over the KeyFrame's map
+            // std::cout << "INFO: Size before loop: " << optimizedPoses.size() << std::endl;
+
+            // Send the graph
+            MsgUdp newMsg;
+            newMsg.type = 'f';
+            // Check if the last id is not registered yet
+            // if (worldModel.GetNodeIdFromInternalMap(optimizedPoses.end()->first) < 0){
+            //     newMsg.size = optimizedPoses.size() - 1;
+            // }else{
+            //     newMsg.size = optimizedPoses.size();
+            // }
+
+            newMsg.size = optimizedPoses.size();
+            std::cout << "INFO: Sending graph with size: " << newMsg.size << " the whole size is: " << optimizedPoses.size() << std::endl;
+
+            KeyFrameData kf;
+            float x, y, z, roll, pitch, yaw;
+            int i = 0;
+            for (std::map<int, Eigen::Affine3f>::const_iterator iter = optimizedPoses.begin(); iter != optimizedPoses.end(); ++iter)
+            {
+                // Get the information of each node
+                nodeId = iter->first;
+                frontEndId = worldModel.GetNodeIdFromInternalMap(nodeId);
+                Transform t = Transform(iter->second);
+                t.GetTranslationalAndEulerAngles(x, y, z, roll, pitch, yaw);
+                // Check if the ID corresponds to a node from this Front-End
+                if (frontEndId > -1)
+                {
+                    // std::cout << "INFO: Sending KeyFrame: " << nodeId << std::endl;
+                    // std::cout << "INFO: Sending KeyFrame mapped id: " << frontEndId << std::endl;
+                    // newMsg.element.keyFrame.id = frontEndId;
+                    // newMsg.element.keyFrame.pose.x = x;
+                    // newMsg.element.keyFrame.pose.y = y;
+                    // newMsg.element.keyFrame.pose.z = z;
+                    // newMsg.element.keyFrame.pose.roll = roll;
+                    // newMsg.element.keyFrame.pose.pitch = pitch;
+                    // newMsg.element.keyFrame.pose.yaw = yaw;
+                    // server.Send(newMsg);
+
+                    kf.id = frontEndId;
+                    kf.timeStamp = 0;
+                    kf.pose.x = x;
+                    kf.pose.y = y;
+                    kf.pose.z = z;
+                    kf.pose.roll = roll;
+                    kf.pose.pitch = pitch;
+                    kf.pose.yaw = yaw;
+
+                    newMsg.element.graph[i] = kf;
+                    i++;
+                }
+            }            
+            server.Send(newMsg);
+            break;
+        }
+
+        // Optimization trigger command case
+        case 'g':
+            std::cout << "INFO: Received Optimize command." << std::endl;
+
+            worldModel.Optimize();
+            break;
+
+        default:
+            break;
+        }
+    }
 }

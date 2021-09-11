@@ -110,8 +110,11 @@ class WorldModelInterface
         void SetCurrentState(Transform t);
     
     protected: 
-        WorldModel *_worldModel;
+        // WorldModel *_worldModel;
         std::string _uniqueID;
+
+        UdpClient client;
+
 
         // INTERFACE META DATA
         // Map the front-end node id into the modular_slam framework node id

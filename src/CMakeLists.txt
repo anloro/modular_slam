@@ -10,7 +10,8 @@ set(SOURCES
     PlotDataSet.cpp
     SFPlot.cpp
     WorldModel.cpp
-
+    UdpClient.cpp
+    UdpServer.cpp
 )
 
 # Set HEADERS_PUBLIC variable (public headers, included in the library)
@@ -26,6 +27,7 @@ set(HEADERS_PUBLIC
     SFPlot.h
     WorldModel.h
     KeyFrame.h
+    UdpClientServer.h
 )
 
 # Set HEADERS_PRIVATE variable, if needed.
@@ -83,4 +85,21 @@ target_include_directories( mainTest PUBLIC
                             ${LIBRARY_NAME} 
                           )
                      
-
+# Create the executable for the server
+add_executable( WorldModelServer 
+                WorldModel.cpp 
+                ${SRC_FILES}
+              )
+# Link the necesary external libraries to the test
+target_link_libraries( WorldModelServer 
+                       tbb 
+                       pthread 
+                       Eigen3::Eigen 
+                       gtsam 
+                       ${LIBRARIES} 
+                       ${LIBRARY_NAME}
+                     )
+# Add the directory with all the headers to the test
+target_include_directories( WorldModelServer PUBLIC 
+                            ${LIBRARY_NAME} 
+                          )
