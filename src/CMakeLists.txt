@@ -12,6 +12,7 @@ set(SOURCES
     WorldModel.cpp
     UdpClient.cpp
     UdpServer.cpp
+    Optimizer.cpp
 )
 
 # Set HEADERS_PUBLIC variable (public headers, included in the library)
@@ -28,6 +29,7 @@ set(HEADERS_PUBLIC
     WorldModel.h
     KeyFrame.h
     UdpClientServer.h
+    Optimizer.h
 )
 
 # Set HEADERS_PRIVATE variable, if needed.

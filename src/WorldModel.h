@@ -8,24 +8,14 @@
 #pragma once
 
 // my includes
-#include "KeyFrame.h"
-#include "LandMark.h"
-#include "PoseFactor.h"
 #include "UdpClientServer.h"
+#include "Optimizer.h"
 
 #include "WorldModelPlotter.h"
 #include <SFML/Graphics.hpp>
 #include <thread>
 
 #include <boost/any.hpp>
-
-// includes to gtsam 
-#include <gtsam/geometry/Pose3.h>
-#include <gtsam/slam/BetweenFactor.h>
-#include <gtsam/nonlinear/NonlinearFactorGraph.h>
-#include <gtsam/nonlinear/Values.h>
-#include <gtsam/nonlinear/GaussNewtonOptimizer.h>
-#include <gtsam/nonlinear/LevenbergMarquardtOptimizer.h>
 
 #include <iostream>
 #include <chrono>
@@ -87,10 +77,7 @@ class WorldModel
         // Plotting thread
         std::thread * _plotterThread;
         WorldModelPlotter _plotter;
-
-        // Communication channel
-
-    
+  
     public:
         // Keeps an internal count of the different entities
         int currentNodeId = -1;
@@ -111,6 +98,9 @@ class WorldModel
         std::map<int, int> _frontEndToModular_lm;
         std::map<int, int> _modularToFrontEnd_lm;
         std::map<int, int> _numberOfTimesSinceFirstDetection;
+
+        typedef std::array<float, 6> Uncertainty; // array with variances x, y, z, roll, pitch, yaw
+        Uncertainty currentNodeUnc = Uncertainty{0, 0, 0, 0, 0, 0};
 
 };
 
