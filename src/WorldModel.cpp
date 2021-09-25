@@ -211,9 +211,15 @@ void anloro::WorldModel::Optimize()
         int lastOdomPoseID = _keyFramesMap.rbegin()->first;
 
         Optimizer optimizer(_refFramesMap, _keyFramesMap, _landMarksMap, _poseFactorsMap);
-        optimizer.Optimize();
-
-        currentNodeUnc = optimizer.GetLastNodeUncertainty();
+        try
+        {
+            optimizer.Optimize();
+            currentNodeUnc = optimizer.GetLastNodeUncertainty();
+        }
+        catch(...)
+        {
+            std::cerr << "The optimization failed" << '\n';
+        }
 
         Transform lastOptimizedPose = _keyFramesMap.rbegin()->second->GetTransform();
         int lastOptimizedPoseID = _keyFramesMap.rbegin()->first;
@@ -499,7 +505,7 @@ int main(int argc, char **argv)
                 worldModel.AddKeyFrameEntity(internalId, node);
                 
                 // There should be a better condition for this
-                worldModel.Optimize();
+                // worldModel.Optimize();
 
                 break;
             }

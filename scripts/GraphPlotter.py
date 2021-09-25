@@ -164,7 +164,7 @@ class ModularSlamGraphReader:
 
 class ModularSlamGraphPlotter:
     """Plot a graph"""
-    def __init__(self, graph=ModularSlamGraph(), title="", path=""):
+    def __init__(self, graph=ModularSlamGraph(), title="", path="", trajectoryName=""):
         # Plot parameters
         self.minXLim = 0
         self.maxXLim = 1
@@ -173,7 +173,7 @@ class ModularSlamGraphPlotter:
         self.radius = 0.05
         self.title = title
         self.trajectoryFormat = 'midnightblue'
-        self.trajectoryName = ""
+        self.trajectoryName = trajectoryName
         self.trajecotryWidth = 1.5
         self.landmarkColor = 'royalblue'
         self.nodeColor = 'royalblue'
@@ -328,12 +328,13 @@ def main():
 
     # Process multiple graphs and make a trajectory comparison 
     if len(args.poses) > 1:
-        title = "Comparison of trajectories"
+        title = "RTAB-Map comparison"
+        # title = "Comparison of trajectories"
         print(title) 
 
         plotter = ModularSlamGraphPlotter(title = title)
-        # legend = ["experiment 1", "experiment 2", "experiment 3"]
-        legend = ["RTAB-Map", "experiment 1", "experiment 2"]
+        legend = ["RTAB-Map GTSAM", "RTAB-Map G2o", "experiment 1"]
+        # legend = ["RTAB-Map", "experiment 1", "experiment 2", "experiment 3"]
         i = 1
         for poses in args.poses:
             readPath = poses
@@ -345,7 +346,8 @@ def main():
             i = i + 1
         
         pos = readPath.rfind('/')
-        name = "trajectoryComparison"
+        name = "rtabmapComparison"
+        # name = "trajectoryComparisonWrtabmap"
         if(pos > -1):
             folder = readPath[:pos]
             writePath = folder + name
@@ -362,7 +364,7 @@ def main():
 
         writePath = readPath[:-4]
 
-        plotter = ModularSlamGraphPlotter(graph, title, writePath)
+        plotter = ModularSlamGraphPlotter(graph, title, writePath, "estimation")
         # plotter.trajectoryName = title
         plotter.plot()
 

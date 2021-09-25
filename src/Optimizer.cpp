@@ -64,8 +64,8 @@ void anloro::Optimizer::Optimize()
         // auto noiseModel = noiseModel::Diagonal::Variances((Vector(6) << sigmaX, sigmaY, sigmaZ, sigmaRoll, sigmaPitch, sigmaYaw).finished());
         auto noiseModel = noiseModel::Diagonal::Variances((Vector(6) << sigmaRoll, sigmaPitch, sigmaYaw, sigmaX, sigmaY, sigmaZ).finished());
         
-        std::cout << "The variances of the odom are: \n" << sigmaX << ", " << sigmaY << ", " << sigmaZ
-                 << ", " << sigmaRoll << ", " << sigmaPitch << ", " << sigmaYaw << std::endl;
+        // std::cout << "The variances of the odom are: \n" << sigmaX << ", " << sigmaY << ", " << sigmaZ
+        //          << ", " << sigmaRoll << ", " << sigmaPitch << ", " << sigmaYaw << std::endl;
 
         Pose3 newMean = Pose3(transform.ToMatrix4f().cast<double>()); // Pose3 needs a double datatype
 
@@ -130,14 +130,14 @@ void anloro::Optimizer::Optimize()
     // Configure the optimizer
     // --------------------------------------------
 
-    // GaussNewtonParams parameters;
-    LevenbergMarquardtParams parameters;
-    int maxIterations = 100; 
+    GaussNewtonParams parameters;
+    // LevenbergMarquardtParams parameters;
+    int maxIterations = 20; 
     float relativeErrorTol = 1e-5; // Stop iterating if the error is below this value
     parameters.relativeErrorTol = relativeErrorTol;
     parameters.maxIterations = maxIterations;
-    // GaussNewtonOptimizer optimizer(graph, initialEstimate, parameters);
-    LevenbergMarquardtOptimizer optimizer(graph, initialEstimate, parameters);
+    GaussNewtonOptimizer optimizer(graph, initialEstimate, parameters);
+    // LevenbergMarquardtOptimizer optimizer(graph, initialEstimate, parameters);
     float iniError = optimizer.error();
     std::cout << "The initial error is: " << iniError << std::endl;
 
