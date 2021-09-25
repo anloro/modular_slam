@@ -332,12 +332,15 @@ def main():
         print(title) 
 
         plotter = ModularSlamGraphPlotter(title = title)
+        # legend = ["experiment 1", "experiment 2", "experiment 3"]
+        legend = ["RTAB-Map", "experiment 1", "experiment 2"]
         i = 1
         for poses in args.poses:
             readPath = poses
             reader = ModularSlamGraphReader(readPath)
             graph = reader.graph
-            trajectoryName = "experiment " + str(i)
+            # trajectoryName = "experiment " + str(i)
+            trajectoryName = legend[i-1]
             plotter.addTrajectory(graph, trajectoryName=trajectoryName)
             i = i + 1
         
